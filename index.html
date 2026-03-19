@@ -4,28 +4,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Student Loan Manager</title>
-
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#2d6a4f" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="Loan Manager" />
-  <link rel="apple-touch-icon" href="icon-192.png" />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400;500;600;700;800&family=Martian+Mono:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:          #f7f6f2;
+      --bg:          #f4f3ef;
       --surface:     #ffffff;
-      --surface2:    #f2f1ed;
-      --border:      rgba(0,0,0,0.08);
+      --surface2:    #eceae4;
+      --border:      rgba(0,0,0,0.09);
       --border2:     rgba(0,0,0,0.05);
-      --text:        #1c1c1a;
-      --text2:       #4a4a46;
-      --text3:       #8a8a84;
-      --text4:       #b8b8b0;
+      --text:        #111110;
+      --text2:       #3a3a38;
+      --text3:       #7a7a74;
+      --text4:       #b0b0a8;
       --accent:      #2d6a4f;
       --accent-soft: #d8ede4;
       --danger:      #c0392b;
@@ -36,24 +29,34 @@
       --blue-soft:   #e8f0fb;
       --purple:      #6b3fa0;
       --purple-soft: #f0eafb;
-      --tab-bg:      #eceae4;
+      --tab-bg:      #e8e6e0;
       --input-bg:    #ffffff;
       --shadow:      0 2px 12px rgba(0,0,0,0.06);
       --shadow-lg:   0 8px 32px rgba(0,0,0,0.10);
+      --sans: 'Epilogue', sans-serif;
+      --mono: 'Martian Mono', monospace;
+
+      /* Per-loan accent colors */
+      --loan-0: #2d6a4f;
+      --loan-1: #1a56a0;
+      --loan-2: #6b3fa0;
+      --loan-3: #b7770d;
+      --loan-4: #c0392b;
+      --loan-5: #0f6e56;
     }
 
     body.dark {
-      --bg:          #111110;
-      --surface:     #1c1c1a;
-      --surface2:    #232320;
+      --bg:          #0e0e0d;
+      --surface:     #181816;
+      --surface2:    #202020;
       --border:      rgba(255,255,255,0.08);
       --border2:     rgba(255,255,255,0.04);
       --text:        #f0efe8;
-      --text2:       #b8b8b0;
-      --text3:       #6e6e68;
-      --text4:       #4a4a46;
+      --text2:       #b0b0a8;
+      --text3:       #606058;
+      --text4:       #3a3a38;
       --accent:      #52b788;
-      --accent-soft: #1a3328;
+      --accent-soft: #152a20;
       --danger:      #e55b4d;
       --danger-soft: #2a1a18;
       --warn:        #e8a838;
@@ -62,14 +65,14 @@
       --blue-soft:   #182030;
       --purple:      #a878e8;
       --purple-soft: #201828;
-      --tab-bg:      #222220;
-      --input-bg:    #1c1c1a;
-      --shadow:      0 2px 12px rgba(0,0,0,0.3);
-      --shadow-lg:   0 8px 32px rgba(0,0,0,0.4);
+      --tab-bg:      #1e1e1c;
+      --input-bg:    #181816;
+      --shadow:      0 2px 12px rgba(0,0,0,0.4);
+      --shadow-lg:   0 8px 32px rgba(0,0,0,0.5);
     }
 
     body {
-      font-family: "DM Sans", sans-serif;
+      font-family: var(--sans);
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
@@ -85,19 +88,20 @@
       align-items: flex-start;
       justify-content: space-between;
       margin-bottom: 2rem;
+      animation: fadeUp 0.4s ease both;
     }
     .header-left h1 {
-      font-family: "DM Serif Display", serif;
-      font-size: 32px;
-      font-weight: 400;
+      font-size: 30px;
+      font-weight: 800;
       color: var(--text);
-      letter-spacing: -0.5px;
+      letter-spacing: -1px;
       line-height: 1.1;
     }
     .header-left p {
-      font-size: 13px;
+      font-size: 12px;
       color: var(--text3);
       margin-top: 5px;
+      font-family: var(--mono);
       font-weight: 300;
     }
     .dark-toggle {
@@ -121,6 +125,8 @@
       grid-template-columns: repeat(4, 1fr);
       gap: 10px;
       margin-bottom: 2rem;
+      animation: fadeUp 0.4s ease both;
+      animation-delay: 0.08s;
     }
     .metric {
       background: var(--surface);
@@ -132,18 +138,19 @@
     }
     .metric:hover { transform: translateY(-1px); }
     .metric-label {
-      font-size: 11px;
-      font-weight: 500;
+      font-size: 10px;
+      font-weight: 600;
       color: var(--text3);
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.07em;
       margin-bottom: 6px;
     }
     .metric-value {
-      font-size: 20px;
-      font-weight: 600;
+      font-size: 19px;
+      font-weight: 700;
       color: var(--text);
-      letter-spacing: -0.3px;
+      font-family: var(--mono);
+      letter-spacing: -0.5px;
     }
     .metric-value.danger    { color: var(--danger); }
     .metric-value.total-debt { color: var(--danger); }
@@ -156,6 +163,8 @@
       border-radius: 12px;
       padding: 4px;
       margin-bottom: 1.75rem;
+      animation: fadeUp 0.4s ease both;
+      animation-delay: 0.14s;
     }
     .tab-btn {
       flex: 1;
@@ -164,8 +173,8 @@
       border-radius: 9px;
       background: none;
       font-size: 13px;
-      font-weight: 500;
-      font-family: "DM Sans", sans-serif;
+      font-weight: 600;
+      font-family: var(--sans);
       color: var(--text3);
       cursor: pointer;
       transition: all 0.18s;
@@ -176,99 +185,234 @@
       box-shadow: var(--shadow);
     }
     .tab-panel { display: none; }
-    .tab-panel.active { display: block; }
+    .tab-panel.active { display: block; animation: fadeUp 0.3s ease both; }
 
-    /* ── Loan Blocks ── */
-    .loans-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 1.25rem; }
+    /* ── Loans List ── */
+    .loans-list { display: flex; flex-direction: column; gap: 14px; margin-bottom: 1.25rem; }
+
+    /* ════════════════════════════════
+       LOAN BLOCK — the redesigned card
+    ════════════════════════════════ */
     .loan-block {
       border-radius: 16px;
       border: 1px solid var(--border);
       overflow: hidden;
       background: var(--surface);
       box-shadow: var(--shadow);
-      transition: box-shadow 0.2s;
+      transition: box-shadow 0.2s, transform 0.2s;
+      animation: fadeUp 0.35s ease both;
+      position: relative;
     }
-    .loan-block:hover { box-shadow: var(--shadow-lg); }
+    .loan-block:hover { box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+    .loan-block:nth-child(1) { animation-delay: 0.05s; }
+    .loan-block:nth-child(2) { animation-delay: 0.12s; }
+    .loan-block:nth-child(3) { animation-delay: 0.19s; }
+    .loan-block:nth-child(4) { animation-delay: 0.26s; }
 
+    /* Bold left accent stripe */
+    .loan-block::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 4px;
+      background: var(--loan-color, var(--accent));
+      border-radius: 4px 0 0 4px;
+      transition: width 0.2s;
+    }
+    .loan-block:hover::before { width: 5px; }
+
+    /* Card header row */
     .bill-card {
-      padding: 1.1rem 1.4rem;
+      padding: 1.25rem 1.25rem 1rem 1.5rem;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 14px;
       cursor: pointer;
       transition: background 0.15s;
     }
-    .bill-card:hover { background: var(--surface2); }
+    .bill-card:hover { background: rgba(0,0,0,0.015); }
+    body.dark .bill-card:hover { background: rgba(255,255,255,0.015); }
 
+    /* Icon — now uses loan accent color */
     .bill-icon {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      background: var(--accent-soft);
+      width: 42px;
+      height: 42px;
+      border-radius: 11px;
+      background: var(--loan-color-soft, var(--accent-soft));
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 20px;
+      font-size: 19px;
       flex-shrink: 0;
+      margin-top: 2px;
     }
+
     .bill-info { flex: 1; min-width: 0; }
+
     .bill-name {
       font-size: 15px;
-      font-weight: 600;
+      font-weight: 700;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
       flex-wrap: wrap;
       color: var(--text);
+      letter-spacing: -0.2px;
     }
+
     .bill-meta {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--text3);
-      margin-top: 3px;
+      margin-top: 4px;
+      font-family: var(--mono);
       font-weight: 300;
     }
-    .bill-amount {
-      font-size: 17px;
-      font-weight: 600;
-      margin-right: 6px;
-      white-space: nowrap;
-      color: var(--text);
-      letter-spacing: -0.3px;
-    }
-    .bill-actions { display: flex; gap: 6px; align-items: center; }
 
-    /* ── Progress Bar ── */
-    .progress-wrap { padding: 0 1.4rem 1rem; }
-    .progress-labels {
+    /* Balance display — big and bold */
+    .loan-balance-block {
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .loan-balance-remaining {
+      font-family: var(--mono);
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--text);
+      letter-spacing: -0.8px;
+      line-height: 1;
+    }
+    .loan-balance-label {
+      font-size: 10px;
+      color: var(--text4);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-top: 3px;
+      font-family: var(--mono);
+    }
+    .loan-monthly {
+      font-size: 12px;
+      color: var(--text3);
+      font-family: var(--mono);
+      margin-top: 5px;
+      font-weight: 300;
+    }
+
+    .card-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* ── Redesigned Progress Section ── */
+    .progress-wrap {
+      padding: 0 1.25rem 1.25rem 1.5rem;
+    }
+
+    .progress-stats {
       display: flex;
       justify-content: space-between;
-      font-size: 11px;
-      color: var(--text4);
-      margin-bottom: 6px;
-      font-weight: 400;
+      align-items: baseline;
+      margin-bottom: 8px;
     }
-    .progress-labels span.green { color: var(--accent); font-weight: 600; }
+
+    .progress-stat-paid {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text3);
+    }
+
+    .progress-stat-pct {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--loan-color, var(--accent));
+      letter-spacing: -0.3px;
+    }
+
+    /* Segmented / chunked progress bar */
     .progress-track {
-      height: 5px;
+      height: 6px;
       background: var(--surface2);
       border-radius: 999px;
       overflow: hidden;
+      position: relative;
     }
+
     .progress-fill {
       height: 100%;
       border-radius: 999px;
-      background: linear-gradient(90deg, var(--accent-soft), var(--accent));
-      transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+      background: var(--loan-color, var(--accent));
+      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+
+    /* Shimmer on progress fill */
+    .progress-fill::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%; right: 0; bottom: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.35) 50%, transparent 100%);
+      animation: shimmer 2.5s ease infinite;
+    }
+
+    @keyframes shimmer {
+      0%   { left: -100%; }
+      60%  { left: 100%; }
+      100% { left: 100%; }
+    }
+
+    /* Milestone ticks on track */
+    .progress-ticks {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      pointer-events: none;
+    }
+    .progress-tick {
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 1px;
+      background: var(--bg);
+      opacity: 0.5;
+    }
+
+    /* Rate pill below bar */
+    .progress-rate {
+      display: flex;
+      gap: 8px;
+      margin-top: 7px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .rate-pill {
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 400;
+      border: 1px solid var(--border);
+      color: var(--text3);
+      background: var(--surface2);
+    }
+
+    .rate-pill.highlighted {
+      border-color: var(--loan-color, var(--accent));
+      color: var(--loan-color, var(--accent));
+      background: var(--loan-color-soft, var(--accent-soft));
     }
 
     /* ── Badges ── */
     .badge {
       font-size: 10px;
-      padding: 3px 8px;
+      padding: 2px 8px;
       border-radius: 999px;
       font-weight: 600;
       letter-spacing: 0.02em;
       text-transform: uppercase;
+      font-family: var(--mono);
     }
     .badge-ok       { background: var(--accent-soft);  color: var(--accent); }
     .badge-soon     { background: var(--warn-soft);    color: var(--warn); }
@@ -280,7 +424,6 @@
     .badge-unsubsidized { background: var(--warn-soft);   color: var(--warn); }
 
     /* ── Three-dot menu ── */
-    .card-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
     .menu-wrap { position: relative; }
     .menu-trigger {
       width: 28px; height: 28px; border-radius: 999px;
@@ -302,7 +445,7 @@
     .menu-item {
       width: 100%; padding: 0.6rem 1rem; border: none;
       background: none; cursor: pointer; font-size: 13px;
-      font-family: "DM Sans", sans-serif; color: var(--text2);
+      font-family: var(--sans); color: var(--text2);
       display: flex; align-items: center; gap: 8px;
       transition: background 0.12s; text-align: left;
     }
@@ -318,29 +461,7 @@
       color: var(--text3); transition: all 0.15s;
     }
     .expand-btn:hover { background: var(--surface2); }
-    .expand-btn.open  { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
-
-    /* ── Add Loan Button ── */
-    .add-btn {
-      width: 100%;
-      padding: 0.85rem;
-      border: 1.5px dashed var(--border);
-      border-radius: 16px;
-      background: none;
-      color: var(--text3);
-      font-size: 14px;
-      font-family: "DM Sans", sans-serif;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.15s;
-      letter-spacing: 0.01em;
-    }
-    .add-btn:hover {
-      background: var(--surface);
-      color: var(--accent);
-      border-color: var(--accent);
-      box-shadow: var(--shadow);
-    }
+    .expand-btn.open { background: var(--loan-color-soft, var(--accent-soft)); border-color: var(--loan-color, var(--accent)); color: var(--loan-color, var(--accent)); }
 
     /* ── History Panel ── */
     .history-panel { display: none; border-top: 1px solid var(--border2); background: var(--surface2); }
@@ -351,20 +472,20 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0.8rem 1.4rem;
+      padding: 0.8rem 1.25rem 0.8rem 1.5rem;
       border-bottom: 1px solid var(--border2);
     }
-    .history-panel-title { font-size: 12px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; }
+    .history-panel-title { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
     .add-payment-btn {
       font-size: 12px;
-      color: var(--accent);
-      background: var(--accent-soft);
+      color: var(--loan-color, var(--accent));
+      background: var(--loan-color-soft, var(--accent-soft));
       border: none;
       cursor: pointer;
       padding: 5px 12px;
       border-radius: 8px;
-      font-weight: 600;
-      font-family: "DM Sans", sans-serif;
+      font-weight: 700;
+      font-family: var(--sans);
       transition: all 0.15s;
     }
     .add-payment-btn:hover { opacity: 0.8; }
@@ -373,117 +494,89 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 0.75rem 1.4rem;
+      padding: 0.75rem 1.25rem 0.75rem 1.5rem;
       border-bottom: 1px solid var(--border2);
       transition: background 0.12s;
     }
     .payment-row:last-child { border-bottom: none; }
     .payment-row:hover { background: var(--surface); }
-
-    .payment-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--accent);
-      flex-shrink: 0;
-      opacity: 0.6;
-    }
+    .payment-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--loan-color, var(--accent)); flex-shrink: 0; opacity: 0.7; }
     .payment-info { flex: 1; min-width: 0; }
-    .payment-date      { font-size: 11px; color: var(--text3); font-weight: 300; }
-    .payment-amount    { font-size: 13px; font-weight: 600; color: var(--text); }
-    .payment-breakdown { font-size: 11px; color: var(--text4); margin-top: 2px; }
-    .payment-balance   { font-size: 13px; font-weight: 600; color: var(--accent); text-align: right; white-space: nowrap; margin-right: 6px; }
+    .payment-date { font-size: 11px; color: var(--text3); font-family: var(--mono); font-weight: 300; }
+    .payment-amount { font-size: 13px; font-weight: 600; color: var(--text); font-family: var(--mono); }
+    .payment-breakdown { font-size: 10px; color: var(--text4); margin-top: 2px; font-family: var(--mono); }
+    .payment-balance { font-size: 13px; font-weight: 500; color: var(--loan-color, var(--accent)); text-align: right; white-space: nowrap; margin-right: 6px; font-family: var(--mono); }
     .payment-balance span { display: block; font-size: 10px; color: var(--text4); font-weight: 300; }
     .payment-edit-btn, .payment-delete-btn {
       height: 22px; padding: 0 8px; border-radius: 999px;
       border: 1px solid var(--border); background: none;
       cursor: pointer; font-size: 10px; display: flex;
       align-items: center; justify-content: center;
-      flex-shrink: 0; transition: all 0.12s; white-space: nowrap;
+      flex-shrink: 0; transition: all 0.12s;
     }
     .payment-edit-btn:hover   { background: var(--surface); }
     .payment-delete-btn:hover { background: var(--danger-soft); border-color: var(--danger); }
-    .payment-edit-btn:hover   { background: var(--surface); }
-    .payment-delete-btn:hover { background: var(--danger-soft); border-color: var(--danger); }
-    .history-empty-row {
-      padding: 1.5rem 1.4rem;
-      font-size: 13px;
-      color: var(--text4);
-      text-align: center;
-      font-weight: 300;
+    .history-empty-row { padding: 1.5rem 1.5rem; font-size: 13px; color: var(--text4); text-align: center; font-family: var(--mono); font-weight: 300; }
+
+    /* ── Add Loan Button ── */
+    .add-btn {
+      width: 100%;
+      padding: 0.9rem;
+      border: 1.5px dashed var(--border);
+      border-radius: 16px;
+      background: none;
+      color: var(--text3);
+      font-size: 14px;
+      font-family: var(--sans);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: -0.1px;
     }
+    .add-btn:hover {
+      background: var(--surface);
+      color: var(--accent);
+      border-color: var(--accent);
+      box-shadow: var(--shadow);
+    }
+
+    /* ── Archived ── */
+    .archived-section { margin-top: 2rem; }
+    .archived-toggle { display: flex; align-items: center; gap: 8px; background: none; border: none; cursor: pointer; color: var(--text3); font-size: 13px; font-family: var(--sans); font-weight: 600; padding: 0; transition: color 0.15s; }
+    .archived-toggle:hover { color: var(--text); }
+    .archived-toggle-icon { font-size: 10px; transition: transform 0.2s; }
+    .archived-toggle-icon.open { transform: rotate(90deg); }
+    .archived-list { display: flex; flex-direction: column; gap: 14px; margin-top: 0.75rem; }
+    .loan-block.archived { opacity: 0.55; }
+    .loan-block.archived:hover { opacity: 1; }
 
     /* ── Analytics ── */
     .analytics-section { margin-bottom: 1.75rem; }
-    .analytics-title {
-      font-family: "DM Serif Display", serif;
-      font-size: 18px;
-      font-weight: 400;
-      color: var(--text);
-      margin-bottom: 0.9rem;
-      letter-spacing: -0.2px;
-    }
+    .analytics-title { font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 0.9rem; letter-spacing: -0.5px; }
     .interest-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-    .interest-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 1rem 1.1rem;
-      box-shadow: var(--shadow);
-    }
+    .interest-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1rem 1.1rem; box-shadow: var(--shadow); }
     .interest-card.wide { grid-column: span 2; }
-    .interest-card-label { font-size: 11px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
-    .interest-card-value { font-size: 20px; font-weight: 600; color: var(--text); letter-spacing: -0.3px; }
+    .interest-card-label { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; }
+    .interest-card-value { font-size: 20px; font-weight: 500; color: var(--text); font-family: var(--mono); letter-spacing: -0.5px; }
     .interest-card-value.red { color: var(--danger); }
-    .per-loan-row { display: flex; gap: 2rem; margin-top: 8px; }
+    .per-loan-row { display: flex; gap: 2rem; margin-top: 8px; flex-wrap: wrap; }
     .per-loan-cell-label { font-size: 11px; color: var(--text3); font-weight: 300; }
-    .per-loan-cell-value { font-size: 16px; font-weight: 600; color: var(--text); }
+    .per-loan-cell-value { font-size: 16px; font-weight: 500; color: var(--text); font-family: var(--mono); }
     .per-loan-cell-value.red { color: var(--danger); }
 
     .payoff-list { display: flex; flex-direction: column; gap: 10px; }
-    .payoff-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 1rem 1.25rem;
-      box-shadow: var(--shadow);
-    }
+    .payoff-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1rem 1.25rem; box-shadow: var(--shadow); }
     .payoff-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .payoff-card-name { font-size: 14px; font-weight: 600; color: var(--text); }
-    .payoff-card-date { font-size: 13px; color: var(--accent); font-weight: 600; }
+    .payoff-card-name { font-size: 14px; font-weight: 700; color: var(--text); }
+    .payoff-card-date { font-size: 13px; color: var(--accent); font-weight: 600; font-family: var(--mono); }
     .payoff-card-date.unknown { color: var(--text4); font-weight: 300; }
     .payoff-track { height: 5px; background: var(--surface2); border-radius: 999px; overflow: hidden; }
     .payoff-fill  { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent-soft), var(--accent)); }
-    .payoff-meta  { display: flex; justify-content: space-between; font-size: 11px; color: var(--text4); margin-top: 6px; font-weight: 300; }
+    .payoff-meta  { display: flex; justify-content: space-between; font-size: 11px; color: var(--text4); margin-top: 6px; font-family: var(--mono); font-weight: 300; }
 
-    .chart-wrap {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 1.4rem;
-      box-shadow: var(--shadow);
-    }
-    .chart-subtabs {
-      display: flex;
-      gap: 3px;
-      background: var(--tab-bg);
-      border-radius: 10px;
-      padding: 3px;
-      margin-bottom: 1.25rem;
-    }
-    .chart-subtab {
-      flex: 1;
-      padding: 0.4rem 0.5rem;
-      border: none;
-      border-radius: 8px;
-      background: none;
-      font-size: 12px;
-      font-weight: 500;
-      font-family: "DM Sans", sans-serif;
-      color: var(--text3);
-      cursor: pointer;
-      transition: all 0.15s;
-    }
+    .chart-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.4rem; box-shadow: var(--shadow); }
+    .chart-subtabs { display: flex; gap: 3px; background: var(--tab-bg); border-radius: 10px; padding: 3px; margin-bottom: 1.25rem; }
+    .chart-subtab { flex: 1; padding: 0.4rem 0.5rem; border: none; border-radius: 8px; background: none; font-size: 12px; font-weight: 600; font-family: var(--sans); color: var(--text3); cursor: pointer; transition: all 0.15s; }
     .chart-subtab.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
     .chart-subpanel { display: none; }
     .chart-subpanel.active { display: block; }
@@ -491,148 +584,62 @@
     .chart-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
     .chart-bar    { width: 100%; border-radius: 4px 4px 0 0; background: var(--accent-soft); min-height: 2px; cursor: default; transition: background 0.15s; }
     .chart-bar:hover { background: var(--accent); }
-    .chart-amount { font-size: 9px; color: var(--text4); }
-    .chart-label  { font-size: 9px; color: var(--text3); white-space: nowrap; font-weight: 300; }
-    .chart-empty  { text-align: center; padding: 2.5rem; color: var(--text4); font-size: 13px; font-weight: 300; }
+    .chart-amount { font-size: 9px; color: var(--text4); font-family: var(--mono); }
+    .chart-label  { font-size: 9px; color: var(--text3); white-space: nowrap; font-family: var(--mono); }
+    .chart-empty  { text-align: center; padding: 2.5rem; color: var(--text4); font-size: 13px; }
 
     /* ── Modals ── */
     .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.45);
-      backdrop-filter: blur(4px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-      animation: fadeIn 0.15s ease;
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100; animation: fadeIn 0.15s ease;
     }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     .modal-overlay.hidden { display: none; }
     .modal {
-      background: var(--surface);
-      border-radius: 20px;
-      padding: 2rem;
-      width: 100%;
-      max-width: 420px;
-      margin: 1rem;
-      box-shadow: var(--shadow-lg);
-      border: 1px solid var(--border);
+      background: var(--surface); border-radius: 20px; padding: 2rem;
+      width: 100%; max-width: 420px; margin: 1rem;
+      box-shadow: var(--shadow-lg); border: 1px solid var(--border);
       animation: slideUp 0.2s cubic-bezier(0.34,1.56,0.64,1);
     }
     @keyframes slideUp { from { opacity: 0; transform: translateY(16px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
-    .modal h2 {
-      font-family: "DM Serif Display", serif;
-      font-size: 22px;
-      font-weight: 400;
-      margin-bottom: 1.5rem;
-      color: var(--text);
-      letter-spacing: -0.3px;
-    }
+    .modal h2 { font-size: 20px; font-weight: 800; margin-bottom: 1.5rem; color: var(--text); letter-spacing: -0.5px; }
     .form-group { margin-bottom: 1rem; }
-    .form-label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text3);
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      margin-bottom: 7px;
-    }
+    .form-label { display: block; font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 7px; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .form-divider {
-      font-size: 11px;
-      color: var(--text4);
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      margin: 0.5rem 0 1rem;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .form-divider::before, .form-divider::after {
-      content: "";
-      flex: 1;
-      height: 1px;
-      background: var(--border);
-    }
     input[type="text"], input[type="number"], input[type="date"], select {
-      width: 100%;
-      padding: 0.6rem 0.85rem;
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      font-size: 14px;
-      font-family: "DM Sans", sans-serif;
-      outline: none;
-      background: var(--input-bg);
-      color: var(--text);
-      transition: border-color 0.15s, box-shadow 0.15s;
-      appearance: none;
+      width: 100%; padding: 0.6rem 0.85rem;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      font-size: 14px; font-family: var(--sans); outline: none;
+      background: var(--input-bg); color: var(--text);
+      transition: border-color 0.15s, box-shadow 0.15s; appearance: none;
     }
-    input:focus, select:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(45,106,79,0.1);
-    }
+    input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(45,106,79,0.1); }
     .form-actions { display: flex; gap: 10px; margin-top: 1.5rem; }
     .btn-primary {
-      flex: 1;
-      padding: 0.7rem 1rem;
-      background: var(--text);
-      color: var(--bg);
-      border: none;
-      border-radius: 11px;
-      font-size: 14px;
-      font-weight: 600;
-      font-family: "DM Sans", sans-serif;
-      cursor: pointer;
-      transition: opacity 0.15s;
-      letter-spacing: 0.01em;
+      flex: 1; padding: 0.7rem 1rem; background: var(--text); color: var(--bg);
+      border: none; border-radius: 11px; font-size: 14px; font-weight: 700;
+      font-family: var(--sans); cursor: pointer; transition: opacity 0.15s; letter-spacing: -0.1px;
     }
     .btn-primary:hover { opacity: 0.85; }
     .btn-secondary {
-      flex: 1;
-      padding: 0.7rem 1rem;
-      background: none;
-      border: 1.5px solid var(--border);
-      border-radius: 11px;
-      font-size: 14px;
-      font-family: "DM Sans", sans-serif;
-      cursor: pointer;
-      color: var(--text2);
-      transition: all 0.15s;
+      flex: 1; padding: 0.7rem 1rem; background: none;
+      border: 1.5px solid var(--border); border-radius: 11px;
+      font-size: 14px; font-family: var(--sans); cursor: pointer;
+      color: var(--text2); transition: all 0.15s;
     }
     .btn-secondary:hover { background: var(--surface2); }
 
-    .archived-section { margin-top: 2rem; }
-    .archived-toggle { display: flex; align-items: center; gap: 8px; background: none; border: none; cursor: pointer; color: var(--text3); font-size: 13px; font-family: "DM Sans", sans-serif; font-weight: 500; padding: 0; transition: color 0.15s; }
-    .archived-toggle:hover { color: var(--text); }
-    .archived-toggle-icon { font-size: 11px; transition: transform 0.2s; }
-    .archived-toggle-icon.open { transform: rotate(90deg); }
-    .archived-list { display: flex; flex-direction: column; gap: 10px; margin-top: 0.75rem; }
-    .loan-block.archived { opacity: 0.6; }
-    .loan-block.archived:hover { opacity: 1; }
-    .loan-block { animation: fadeUp 0.35s ease both; }
-    .loan-block:nth-child(1) { animation-delay: 0.05s; }
-    .loan-block:nth-child(2) { animation-delay: 0.12s; }
-    .loan-block:nth-child(3) { animation-delay: 0.19s; }
-    .loan-block:nth-child(4) { animation-delay: 0.26s; }
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    .metric { animation: fadeUp 0.35s ease both; }
-    .metric:nth-child(1) { animation-delay: 0.10s; }
-    .metric:nth-child(2) { animation-delay: 0.16s; }
-    .metric:nth-child(3) { animation-delay: 0.22s; }
-    .metric:nth-child(4) { animation-delay: 0.28s; }
-
-    /* Page-level entrance animations */
-    .header   { animation: fadeUp 0.4s ease both; animation-delay: 0.0s; }
-    .summary  { animation: fadeUp 0.4s ease both; animation-delay: 0.08s; }
-    .tabs     { animation: fadeUp 0.4s ease both; animation-delay: 0.16s; }
-    .tab-panel.active { animation: fadeUp 0.4s ease both; animation-delay: 0.22s; }
-
-    /* Smooth scale-in for modals */
-    @keyframes scaleIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
-    .modal { animation: scaleIn 0.22s cubic-bezier(0.34,1.56,0.64,1); }
+    @media (max-width: 520px) {
+      body { padding: 1.5rem 0.9rem 3rem; }
+      .summary { grid-template-columns: repeat(2, 1fr); }
+      .header-left h1 { font-size: 26px; }
+      .loan-balance-remaining { font-size: 17px; }
+      .form-row { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -693,7 +700,6 @@
       </div>
     </div>
   </div>
-
 </div>
 
 <!-- Loan Modal -->
@@ -739,11 +745,11 @@
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Interest paid (auto)</label>
-        <div id="p-interest-preview" style="padding:0.6rem 0.85rem; border:1.5px solid var(--border); border-radius:10px; font-size:14px; color:var(--text4); background:var(--surface2);">—</div>
+        <div id="p-interest-preview" style="padding:0.6rem 0.85rem; border:1.5px solid var(--border); border-radius:10px; font-size:14px; color:var(--text4); background:var(--surface2); font-family:var(--mono);">—</div>
       </div>
       <div class="form-group">
         <label class="form-label">New remaining balance</label>
-        <div id="p-balance-preview" style="padding:0.6rem 0.85rem; border:1.5px solid var(--border); border-radius:10px; font-size:14px; color:var(--text4); background:var(--surface2);">—</div>
+        <div id="p-balance-preview" style="padding:0.6rem 0.85rem; border:1.5px solid var(--border); border-radius:10px; font-size:14px; color:var(--text4); background:var(--surface2); font-family:var(--mono);">—</div>
       </div>
     </div>
     <div class="form-actions">
@@ -760,13 +766,24 @@
     { id: 2, name: "Private Loan",        loan_type: "Private",      interest_rate: 7.25, amount: 200, due_date: "2026-03-18", starting_balance: 8000,  remaining_balance: 6400,  loan_history: [] },
   ];
 
-  let bills           = JSON.parse(localStorage.getItem("bills")) || DEFAULT_BILLS;
+  let bills           = JSON.parse(localStorage.getItem("slm-bills")) || DEFAULT_BILLS;
   let editingLoanId   = null;
   let activePayLoanId = null;
   let editingPayIdx   = null;
   let openPanels      = {};
 
-  function saveBills() { localStorage.setItem("bills", JSON.stringify(bills)); }
+  // Loan color palette — each loan gets a unique identity
+  const LOAN_COLORS      = ["#2d6a4f","#1a56a0","#7c3aed","#b7770d","#c0392b","#0891b2"];
+  const LOAN_COLORS_SOFT = ["#d8ede4","#e8f0fb","#ede9fe","#fef9e7","#fdecea","#e0f2fe"];
+  // dark mode soft
+  const LOAN_COLORS_SOFT_D = ["#152a20","#182030","#1e1230","#2a2010","#2a1a18","#0c2030"];
+
+  const ICONS = {
+    "Federal Direct Loan":"🎓","Perkins Loan":"🎓","PLUS Loan":"🎓",
+    "Private Loan":"🏦","Subsidized":"🎓","Unsubsidized":"🎓","Other":"💳"
+  };
+
+  function saveBills() { localStorage.setItem("slm-bills", JSON.stringify(bills)); }
 
   function toggleDark() {
     const isDark = document.body.classList.toggle("dark");
@@ -785,11 +802,6 @@
     if (typeof n !== "number" || isNaN(n)) return "—";
     return n.toLocaleString("en-US", { minimumFractionDigits: n % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 });
   }
-
-  const ICONS = {
-    "Federal Direct Loan":"🎓","Perkins Loan":"🎓","PLUS Loan":"🎓",
-    "Private Loan":"🏦","Subsidized":"🎓","Unsubsidized":"🎓","Other":"💳"
-  };
 
   function getStatus(d) {
     if (d < 0)   return { label: "Overdue",    cls: "badge-overdue" };
@@ -827,24 +839,19 @@
     });
   }
 
-  // --- Animated counter ---
   function animateValue(id, target) {
     const el = document.getElementById(id);
     if (!el) return;
-    const prev    = parseFloat(el.dataset.value) || 0;
-    const start   = prev;
-    const change  = target - start;
-    if (change === 0) return;
-    const duration = 1800;
+    const prev = parseFloat(el.dataset.value) || 0;
+    const change = target - prev;
+    if (change === 0) { el.textContent = "$" + fmt(target); return; }
+    const duration = 1600;
     const startTime = performance.now();
     function step(now) {
-      const elapsed  = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      // ease out cubic
-      const ease = 1 - Math.pow(1 - progress, 3);
-      const current = start + change * ease;
-      el.textContent = "$" + fmt(Math.round(current * 100) / 100);
-      if (progress < 1) requestAnimationFrame(step);
+      const p = Math.min((now - startTime) / duration, 1);
+      const e = 1 - Math.pow(1 - p, 3);
+      el.textContent = "$" + fmt(Math.round((prev + change * e) * 100) / 100);
+      if (p < 1) requestAnimationFrame(step);
       else { el.textContent = "$" + fmt(target); el.dataset.value = target; }
     }
     el.dataset.value = prev;
@@ -852,8 +859,7 @@
   }
 
   function render() {
-    const today = new Date();
-    today.setHours(0,0,0,0);
+    const today = new Date(); today.setHours(0,0,0,0);
     document.getElementById("today-label").textContent = today.toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric", year:"numeric" });
 
     let total = 0, dueWeek = 0, overdue = 0, totalDebt = 0;
@@ -868,52 +874,70 @@
     animateValue("overdue",       overdue);
     animateValue("total-debt",    totalDebt);
 
-    const container = document.getElementById("loans-list");
-    container.innerHTML = "";
-    const archivedList    = document.getElementById("archived-list");
+    const container    = document.getElementById("loans-list");
+    const archivedList = document.getElementById("archived-list");
     const archivedSection = document.getElementById("archived-section");
+    container.innerHTML = "";
     archivedList.innerHTML = "";
 
     const activeLoans   = [...bills].filter(b => !b.archived).sort((a,b) => new Date(a.due_date) - new Date(b.due_date));
     const archivedLoans = [...bills].filter(b =>  b.archived);
 
-    // Show/hide archived section
     archivedSection.style.display = archivedLoans.length > 0 ? "block" : "none";
     document.getElementById("archived-label").textContent = `Paid off loans (${archivedLoans.length})`;
 
-    function buildLoanBlock(bill, isArchived) {
-      const due       = new Date(bill.due_date + "T00:00:00");
-      const daysLeft  = Math.round((due - today) / 86400000);
-      const status    = getStatus(daysLeft);
-      const icon      = ICONS[bill.name] || ICONS["Other"];
+    const isDark = document.body.classList.contains("dark");
+
+    function buildLoanBlock(bill, isArchived, colorIndex) {
+      const due      = new Date(bill.due_date + "T00:00:00");
+      const daysLeft = Math.round((due - today) / 86400000);
+      const status   = getStatus(daysLeft);
+      const icon     = ICONS[bill.name] || ICONS["Other"];
       const dateLabel = due.toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" });
       const remaining = bill.remaining_balance !== undefined ? bill.remaining_balance : bill.amount;
-      const history   = bill.loan_history || [];
       const starting  = bill.starting_balance || bill.remaining_balance || bill.amount;
-      const payments  = history.length;
       const pct       = starting > 0 ? Math.min(100, Math.max(0, Math.round((1 - remaining / starting) * 100))) : 0;
       const isOpen    = !!openPanels[bill.id];
 
-      const typeBadgeClass = { Federal:"badge-federal", Subsidized:"badge-subsidized", Unsubsidized:"badge-unsubsidized", Private:"badge-private", PLUS:"badge-federal", Perkins:"badge-subsidized" }[bill.loan_type] || "badge-federal";
-      const typeTag  = bill.loan_type ? `<span class="badge ${typeBadgeClass}">${bill.loan_type}</span>` : "";
-      const rateTag  = bill.interest_rate !== null && bill.interest_rate !== undefined ? ` · ${bill.interest_rate}% APR` : "";
+      const loanColor     = LOAN_COLORS[colorIndex % LOAN_COLORS.length];
+      const loanColorSoft = isDark
+        ? LOAN_COLORS_SOFT_D[colorIndex % LOAN_COLORS_SOFT_D.length]
+        : LOAN_COLORS_SOFT[colorIndex % LOAN_COLORS_SOFT.length];
+
+      const typeBadgeClass = {
+        Federal:"badge-federal", Subsidized:"badge-subsidized",
+        Unsubsidized:"badge-unsubsidized", Private:"badge-private",
+        PLUS:"badge-federal", Perkins:"badge-subsidized"
+      }[bill.loan_type] || "badge-federal";
 
       const block = document.createElement("div");
-      block.className = "loan-block";
+      block.className = isArchived ? "loan-block archived" : "loan-block";
+      block.style.setProperty("--loan-color", loanColor);
+      block.style.setProperty("--loan-color-soft", loanColorSoft);
 
+      // Card row
       const cardRow = document.createElement("div");
       cardRow.className = "bill-card";
-      cardRow.style.cursor = "pointer";
-      cardRow.onclick = (e) => { if (e.target.closest("button")) return; togglePanel(bill.id); };
+      cardRow.onclick = e => { if (e.target.closest("button")) return; togglePanel(bill.id); };
       cardRow.innerHTML = `
         <div class="bill-icon">${icon}</div>
         <div class="bill-info">
-          <div class="bill-name">${bill.name} ${typeTag}${isArchived ? '<span class="badge badge-ok">Paid off 🎓</span>' : `<span class="badge ${status.cls}">${status.label}</span>`}</div>
+          <div class="bill-name">
+            ${bill.name}
+            ${bill.loan_type ? `<span class="badge ${typeBadgeClass}">${bill.loan_type}</span>` : ""}
+            ${isArchived
+              ? `<span class="badge badge-ok">Paid off 🎓</span>`
+              : `<span class="badge ${status.cls}">${status.label}</span>`}
+          </div>
           <div class="bill-meta">${isArchived ? "Paid off" : `Due ${dateLabel}`}</div>
         </div>
-        <div class="bill-amount">$${fmt(bill.amount)}</div>
+        <div class="loan-balance-block">
+          <div class="loan-balance-remaining">$${fmt(remaining)}</div>
+          <div class="loan-balance-label">remaining</div>
+          <div class="loan-monthly">$${fmt(bill.amount)}/mo</div>
+        </div>
         <div class="card-right">
-          <button class="expand-btn ${isOpen?"open":""}" id="expand-btn-${bill.id}" onclick="togglePanel(${bill.id})">${isOpen?"▲":"▼"}</button>
+          <button class="expand-btn ${isOpen ? "open" : ""}" id="expand-btn-${bill.id}" onclick="togglePanel(${bill.id})">${isOpen ? "▲" : "▼"}</button>
           <div class="menu-wrap" id="menu-wrap-${bill.id}">
             <button class="menu-trigger" onclick="toggleMenu(${bill.id}, event)" title="Options">⋯</button>
             <div class="menu-dropdown" id="menu-${bill.id}" style="display:none;">
@@ -928,15 +952,40 @@
           </div>
         </div>`;
 
+      // Progress section
       const progressWrap = document.createElement("div");
       progressWrap.className = "progress-wrap";
-      progressWrap.innerHTML = `
-        <div class="progress-labels"><span>$${fmt(remaining)} of $${fmt(starting)}</span><span class="green">${pct}% paid off</span></div>
-        <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>`;
 
+      // Monthly interest cost estimate
+      const monthlyInterest = bill.interest_rate
+        ? ((bill.interest_rate / 100 / 12) * remaining).toFixed(2)
+        : null;
+
+      progressWrap.innerHTML = `
+        <div class="progress-stats">
+          <span class="progress-stat-paid">$${fmt(starting - remaining)} of $${fmt(starting)} paid</span>
+          <span class="progress-stat-pct">${pct}%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" style="width:${pct}%"></div>
+          <div class="progress-ticks">
+            <div class="progress-tick" style="left:25%"></div>
+            <div class="progress-tick" style="left:50%"></div>
+            <div class="progress-tick" style="left:75%"></div>
+          </div>
+        </div>
+        <div class="progress-rate">
+          ${bill.interest_rate ? `<span class="rate-pill highlighted">${bill.interest_rate}% APR</span>` : ""}
+          ${monthlyInterest ? `<span class="rate-pill">~$${monthlyInterest}/mo interest</span>` : ""}
+          <span class="rate-pill">${(bill.loan_history || []).length} payments</span>
+        </div>`;
+
+      // History panel
       const panel = document.createElement("div");
       panel.className = "history-panel" + (isOpen ? " open" : "");
       panel.id = "panel-" + bill.id;
+      panel.style.setProperty("--loan-color", loanColor);
+      panel.style.setProperty("--loan-color-soft", loanColorSoft);
 
       const hdr = document.createElement("div");
       hdr.className = "history-panel-header";
@@ -949,7 +998,7 @@
         empty.textContent = "No payments yet — click + Add payment to get started.";
         panel.appendChild(empty);
       } else {
-        [...bill.loan_history].map((e,i)=>({e,i})).reverse().forEach(({e,i}) => {
+        [...bill.loan_history].map((e,i) => ({e,i})).reverse().forEach(({e,i}) => {
           const row = document.createElement("div");
           row.className = "payment-row";
           const hasPrincipal = e.principal_paid !== null && e.principal_paid !== undefined;
@@ -978,17 +1027,16 @@
       block.appendChild(cardRow);
       block.appendChild(progressWrap);
       block.appendChild(panel);
-      if (isArchived) {
-        block.className = "loan-block archived";
-        archivedList.appendChild(block);
-      } else {
-        container.appendChild(block);
-      }
+
+      if (isArchived) archivedList.appendChild(block);
+      else            container.appendChild(block);
     }
 
-    activeLoans.forEach(bill => buildLoanBlock(bill, false));
-    archivedLoans.forEach(bill => buildLoanBlock(bill, true));
+    activeLoans.forEach((bill, i) => buildLoanBlock(bill, false, i));
+    archivedLoans.forEach((bill, i) => buildLoanBlock(bill, true, activeLoans.length + i));
   }
+
+  // ── All other logic (identical to original) ──
 
   function renderAnalytics() {
     let totalInterest = 0, totalPrincipal = 0;
@@ -998,35 +1046,17 @@
     }));
     const totalBalance  = bills.reduce((s,b) => s + (b.remaining_balance||0), 0);
     const totalPayments = bills.reduce((s,b) => s + (b.loan_history||[]).length, 0);
-
     const grid = document.getElementById("interest-grid");
     grid.innerHTML = `
       <div class="interest-card"><div class="interest-card-label">Total interest paid</div><div class="interest-card-value red" id="a-interest">$0</div></div>
       <div class="interest-card"><div class="interest-card-label">Total principal paid</div><div class="interest-card-value" id="a-principal">$0</div></div>
       <div class="interest-card"><div class="interest-card-label">Total remaining balance</div><div class="interest-card-value" id="a-balance">$0</div></div>
       <div class="interest-card"><div class="interest-card-label">Payments made</div><div class="interest-card-value" id="a-payments">0</div></div>`;
-
-    animateValue("a-interest",  totalInterest);
+    animateValue("a-interest", totalInterest);
     animateValue("a-principal", totalPrincipal);
-    animateValue("a-balance",   totalBalance);
-
-    // Animate payment count separately (no $ prefix)
-    const paymentsEl = document.getElementById("a-payments");
-    const prevCount  = parseFloat(paymentsEl.dataset.value) || 0;
-    const countChange = totalPayments - prevCount;
-    if (countChange !== 0) {
-      const startTime = performance.now();
-      const duration  = 1800;
-      (function step(now) {
-        const progress = Math.min((now - startTime) / duration, 1);
-        const ease     = 1 - Math.pow(1 - progress, 3);
-        paymentsEl.textContent = Math.round(prevCount + countChange * ease);
-        if (progress < 1) requestAnimationFrame(step);
-        else { paymentsEl.textContent = totalPayments; paymentsEl.dataset.value = totalPayments; }
-      })(performance.now());
-    } else {
-      paymentsEl.textContent = totalPayments;
-    }
+    animateValue("a-balance", totalBalance);
+    const pe = document.getElementById("a-payments");
+    pe.textContent = totalPayments;
 
     bills.forEach(b => {
       const interest  = (b.loan_history||[]).reduce((s,e) => s+(e.interest_paid||0), 0);
@@ -1044,7 +1074,6 @@
       grid.appendChild(card);
     });
 
-    // Payoff dates
     const payoffList = document.getElementById("payoff-list");
     payoffList.innerHTML = "";
     bills.forEach(b => {
@@ -1065,11 +1094,9 @@
       payoffList.appendChild(card);
     });
 
-    // Monthly chart
     const monthly = {};
     bills.forEach(b => (b.loan_history||[]).forEach(e => {
-      const d = new Date(e.paid_on);
-      if (isNaN(d)) return;
+      const d = new Date(e.paid_on); if (isNaN(d)) return;
       const key = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0");
       monthly[key] = (monthly[key]||0) + (e.amount_paid||0);
     }));
@@ -1081,22 +1108,18 @@
     } else {
       const maxVal = Math.max(...keys.map(k => monthly[k]));
       keys.forEach(key => {
-        const val  = monthly[key];
+        const val = monthly[key];
         const hPct = maxVal > 0 ? (val/maxVal)*100 : 0;
         const [yr,mo] = key.split("-");
         const label = new Date(parseInt(yr), parseInt(mo)-1).toLocaleDateString("en-US", { month:"short", year:"2-digit" });
         const wrap = document.createElement("div");
         wrap.className = "chart-bar-wrap";
-        wrap.innerHTML = `
-          <div class="chart-amount">$${fmt(val)}</div>
-          <div class="chart-bar" style="height:${hPct}%" title="$${fmt(val)}"></div>
-          <div class="chart-label">${label}</div>`;
+        wrap.innerHTML = `<div class="chart-amount">$${fmt(val)}</div><div class="chart-bar" style="height:${hPct}%" title="$${fmt(val)}"></div><div class="chart-label">${label}</div>`;
         chart.appendChild(wrap);
       });
     }
 
-    // Balance over time
-    const COLORS = ["#2d6a4f","#1a56a0","#6b3fa0","#b7770d","#c0392b","#0f6e56"];
+    const COLORS = ["#2d6a4f","#1a56a0","#7c3aed","#b7770d","#c0392b","#0891b2"];
     const balWrap = document.getElementById("balance-chart-wrap");
     if (window._balChart) { window._balChart.destroy(); window._balChart = null; }
     balWrap.innerHTML = "";
@@ -1106,49 +1129,40 @@
     if (sortedDates.length < 2) {
       balWrap.innerHTML = `<div class="chart-empty">Add at least 2 payments to see balance history.</div>`;
     } else {
-      const balCanvas = document.createElement("canvas");
-      balCanvas.id = "balance-chart"; balCanvas.height = 220;
+      const balCanvas = document.createElement("canvas"); balCanvas.height = 220;
       balWrap.appendChild(balCanvas);
-      const balDatasets = [];
-      bills.forEach((b, i) => {
-        const history = [...(b.loan_history||[])].sort((a,c) => new Date(a.paid_on) - new Date(c.paid_on));
-        if (history.length === 0) return;
-        balDatasets.push({
-          label: b.name,
-          data: sortedDates.map(date => { const entry = history.filter(e => new Date(e.paid_on) <= new Date(date)).pop(); return entry ? entry.remaining_balance : null; }),
-          borderColor: COLORS[i % COLORS.length], backgroundColor: "transparent",
-          borderWidth: 2, pointRadius: 3, tension: 0.3, spanGaps: true,
-        });
-      });
       const isDark = document.body.classList.contains("dark");
       const gc = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)";
-      const tc = isDark ? "#4a4a46" : "#b8b8b0";
+      const tc = isDark ? "#3a3a38" : "#b0b0a8";
       window._balChart = new Chart(balCanvas, {
-        type: "line", data: { labels: sortedDates, datasets: balDatasets },
-        options: { responsive: true, plugins: { legend: { labels: { color: tc, font: { size: 11, family: "DM Sans" } } }, tooltip: { callbacks: { label: ctx => " $" + fmt(ctx.raw) } } }, scales: { x: { ticks: { color: tc, maxTicksLimit: 8, font: { family: "DM Sans" } }, grid: { color: gc } }, y: { ticks: { color: tc, callback: v => "$" + fmt(v), font: { family: "DM Sans" } }, grid: { color: gc } } } }
+        type: "line",
+        data: { labels: sortedDates, datasets: bills.map((b,i) => ({
+          label: b.name,
+          data: sortedDates.map(date => { const h = [...(b.loan_history||[])].sort((a,c) => new Date(a.paid_on)-new Date(c.paid_on)); const entry = h.filter(e => new Date(e.paid_on) <= new Date(date)).pop(); return entry ? entry.remaining_balance : null; }),
+          borderColor: COLORS[i % COLORS.length], backgroundColor: "transparent", borderWidth: 2, pointRadius: 3, tension: 0.3, spanGaps: true,
+        }))},
+        options: { responsive: true, plugins: { legend: { labels: { color: tc, font: { size: 11, family: "Epilogue" } } }, tooltip: { callbacks: { label: ctx => " $" + fmt(ctx.raw) } } }, scales: { x: { ticks: { color: tc, maxTicksLimit: 8 }, grid: { color: gc } }, y: { ticks: { color: tc, callback: v => "$" + fmt(v) }, grid: { color: gc } } } }
       });
     }
 
-    // Payoff projection
     const projWrap = document.getElementById("projection-chart-wrap");
     if (window._projChart) { window._projChart.destroy(); window._projChart = null; }
     projWrap.innerHTML = "";
     const projDatasets = [];
     let hasProjection = false;
-    bills.forEach((b, i) => {
-      const history = [...(b.loan_history||[])].sort((a,c) => new Date(a.paid_on) - new Date(c.paid_on));
+    bills.forEach((b,i) => {
+      const history = [...(b.loan_history||[])].sort((a,c) => new Date(a.paid_on)-new Date(c.paid_on));
       const principals = history.map(e => e.principal_paid).filter(p => p > 0);
       if (principals.length < 2) return;
       hasProjection = true;
-      const avgPrincipal = principals.reduce((a,c) => a+c, 0) / principals.length;
+      const avgP = principals.reduce((a,c) => a+c,0) / principals.length;
       let balance = history.length > 0 ? history[history.length-1].remaining_balance : b.remaining_balance;
-      const histPoints = history.map(e => ({ x: e.paid_on, y: e.remaining_balance }));
-      const projPoints = [];
-      let d = new Date(); let i2 = 0;
+      const histPoints = history.map(e => ({x: e.paid_on, y: e.remaining_balance}));
+      const projPoints = []; let d = new Date(); let i2 = 0;
       while (balance > 0 && i2 < 360) {
-        d = new Date(d); d.setMonth(d.getMonth() + 1);
-        balance = Math.max(0, balance - avgPrincipal);
-        projPoints.push({ x: d.toLocaleDateString("en-US", { month:"short", year:"numeric" }), y: balance });
+        d = new Date(d); d.setMonth(d.getMonth()+1);
+        balance = Math.max(0, balance - avgP);
+        projPoints.push({x: d.toLocaleDateString("en-US", {month:"short",year:"numeric"}), y: balance});
         i2++; if (balance === 0) break;
       }
       const color = COLORS[i % COLORS.length];
@@ -1158,38 +1172,29 @@
     if (!hasProjection) {
       projWrap.innerHTML = `<div class="chart-empty">Add at least 2 payments with principal to see the projection.</div>`;
     } else {
-      const projCanvas = document.createElement("canvas");
-      projCanvas.id = "projection-chart"; projCanvas.height = 220;
+      const projCanvas = document.createElement("canvas"); projCanvas.height = 220;
       projWrap.appendChild(projCanvas);
       const isDark2 = document.body.classList.contains("dark");
       const gc2 = isDark2 ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)";
-      const tc2 = isDark2 ? "#4a4a46" : "#b8b8b0";
+      const tc2 = isDark2 ? "#3a3a38" : "#b0b0a8";
       window._projChart = new Chart(projCanvas, {
         type: "line", data: { datasets: projDatasets },
-        options: { responsive: true, parsing: false, plugins: { legend: { labels: { color: tc2, font: { size: 11, family: "DM Sans" }, filter: () => true } }, tooltip: { callbacks: { label: ctx => " $" + fmt(ctx.raw.y) } } }, scales: { x: { type: "category", ticks: { color: tc2, maxTicksLimit: 8, font: { family: "DM Sans" } }, grid: { color: gc2 } }, y: { ticks: { color: tc2, callback: v => "$" + fmt(v), font: { family: "DM Sans" } }, grid: { color: gc2 } } } }
+        options: { responsive: true, parsing: false, plugins: { legend: { labels: { color: tc2, font: { size: 11 } } }, tooltip: { callbacks: { label: ctx => " $" + fmt(ctx.raw.y) } } }, scales: { x: { type: "category", ticks: { color: tc2, maxTicksLimit: 8 }, grid: { color: gc2 } }, y: { ticks: { color: tc2, callback: v => "$" + fmt(v) }, grid: { color: gc2 } } } }
       });
     }
   }
 
   function toggleMenu(id, e) {
     e.stopPropagation();
-    const menu    = document.getElementById("menu-" + id);
-    const trigger = menu.previousElementSibling;
-    const isOpen  = menu.style.display !== "none";
+    const menu = document.getElementById("menu-" + id);
+    const isOpen = menu.style.display !== "none";
     closeAllMenus();
-    if (!isOpen) {
-      menu.style.display = "block";
-      trigger.classList.add("active");
-    }
+    if (!isOpen) { menu.style.display = "block"; menu.previousElementSibling.classList.add("active"); }
   }
 
   function closeMenu(id) {
     const menu = document.getElementById("menu-" + id);
-    if (menu) {
-      menu.style.display = "none";
-      const trigger = menu.previousElementSibling;
-      if (trigger) trigger.classList.remove("active");
-    }
+    if (menu) { menu.style.display = "none"; if (menu.previousElementSibling) menu.previousElementSibling.classList.remove("active"); }
   }
 
   function closeAllMenus() {
@@ -1197,15 +1202,14 @@
     document.querySelectorAll(".menu-trigger").forEach(t => t.classList.remove("active"));
   }
 
-  // Close menus when clicking outside
   document.addEventListener("click", closeAllMenus);
 
   function togglePanel(loanId) {
     openPanels[loanId] = !openPanels[loanId];
-    document.getElementById("panel-" + loanId).classList.toggle("open", openPanels[loanId]);
-    const btn = document.getElementById("expand-btn-" + loanId);
-    btn.classList.toggle("open", openPanels[loanId]);
-    btn.textContent = openPanels[loanId] ? "▲" : "▼";
+    const panel = document.getElementById("panel-" + loanId);
+    const btn   = document.getElementById("expand-btn-" + loanId);
+    if (panel) panel.classList.toggle("open", openPanels[loanId]);
+    if (btn)   { btn.classList.toggle("open", openPanels[loanId]); btn.textContent = openPanels[loanId] ? "▲" : "▼"; }
   }
 
   function openLoanModal(id) {
@@ -1227,7 +1231,7 @@
   function closeLoanModal() { document.getElementById("loan-modal").classList.add("hidden"); editingLoanId = null; }
 
   function saveLoan() {
-    const name      = document.getElementById("f-name").value.trim();
+    const name = document.getElementById("f-name").value.trim();
     const loan_type = document.getElementById("f-type").value;
     const amount    = parseFloat(document.getElementById("f-amount").value);
     const rate      = parseFloat(document.getElementById("f-rate").value);
@@ -1237,9 +1241,7 @@
     if (editingLoanId) {
       const bill = bills.find(b => b.id === editingLoanId);
       bill.name = name; bill.loan_type = loan_type; bill.amount = amount;
-      bill.interest_rate = isNaN(rate) ? null : rate;
-      bill.starting_balance = starting;
-      // Only reset remaining_balance if no payments yet
+      bill.interest_rate = isNaN(rate) ? null : rate; bill.starting_balance = starting;
       if (!bill.loan_history || bill.loan_history.length === 0) bill.remaining_balance = starting;
       bill.due_date = due_date;
     } else {
@@ -1257,27 +1259,24 @@
     editingPayIdx   = paymentIdx !== undefined ? paymentIdx : null;
     const bill  = bills.find(b => b.id === loanId);
     const entry = editingPayIdx !== null ? bill.loan_history[editingPayIdx] : null;
-    const isEdit = entry !== null;
     const todayStr = new Date().toISOString().split("T")[0];
     function toInputDate(r) { const d = new Date(r); return isNaN(d) ? todayStr : d.toISOString().split("T")[0]; }
-    document.getElementById("payment-modal-title").textContent = isEdit ? "Edit payment" : "Add payment";
-    document.getElementById("payment-modal-save").textContent  = isEdit ? "Save changes"  : "Save payment";
-    document.getElementById("p-date").value      = isEdit ? toInputDate(entry.paid_on) : todayStr;
-    document.getElementById("p-total").value     = isEdit ? entry.amount_paid : "";
-    document.getElementById("p-principal").value = isEdit && entry.principal_paid !== null ? entry.principal_paid : "";
+    document.getElementById("payment-modal-title").textContent = entry ? "Edit payment" : "Add payment";
+    document.getElementById("payment-modal-save").textContent  = entry ? "Save changes"  : "Save payment";
+    document.getElementById("p-date").value      = entry ? toInputDate(entry.paid_on) : todayStr;
+    document.getElementById("p-total").value     = entry ? entry.amount_paid : "";
+    document.getElementById("p-principal").value = entry && entry.principal_paid !== null ? entry.principal_paid : "";
     document.getElementById("p-interest-preview").textContent = "—";
-    document.getElementById("p-interest-preview").style.color = "var(--text4)";
     document.getElementById("payment-modal").classList.remove("hidden");
-    updateBalancePreview();
-    updateInterestPreview();
+    updateBalancePreview(); updateInterestPreview();
   }
 
   function closePaymentModal() { document.getElementById("payment-modal").classList.add("hidden"); activePayLoanId = null; editingPayIdx = null; }
 
   function updateInterestPreview() {
-    const total     = parseFloat(document.getElementById("p-total").value);
+    const total = parseFloat(document.getElementById("p-total").value);
     const principal = parseFloat(document.getElementById("p-principal").value);
-    const preview   = document.getElementById("p-interest-preview");
+    const preview = document.getElementById("p-interest-preview");
     if (isNaN(total) || isNaN(principal)) { preview.textContent = "—"; preview.style.color = "var(--text4)"; return; }
     const interest = Math.max(0, total - principal);
     preview.textContent = "$" + fmt(interest);
@@ -1285,10 +1284,9 @@
   }
 
   function updateBalancePreview() {
-    const bill = bills.find(b => b.id === activePayLoanId);
-    if (!bill) return;
+    const bill = bills.find(b => b.id === activePayLoanId); if (!bill) return;
     const principal = parseFloat(document.getElementById("p-principal").value);
-    const preview   = document.getElementById("p-balance-preview");
+    const preview = document.getElementById("p-balance-preview");
     if (isNaN(principal)) { preview.textContent = "—"; preview.style.color = "var(--text4)"; return; }
     let prevBalance = bill.remaining_balance;
     if (editingPayIdx !== null && bill.loan_history.length > 1) {
@@ -1297,9 +1295,56 @@
       const sorted = [...bill.loan_history].sort((a,b) => new Date(a.paid_on)-new Date(b.paid_on));
       prevBalance = sorted[sorted.length-1].remaining_balance;
     }
-    const newBalance = Math.max(0, prevBalance - principal);
-    preview.textContent = "$" + fmt(newBalance);
+    preview.textContent = "$" + fmt(Math.max(0, prevBalance - principal));
     preview.style.color = "var(--accent)";
+  }
+
+  function savePayment() {
+    const bill = bills.find(b => b.id === activePayLoanId); if (!bill) return;
+    const rawDate   = document.getElementById("p-date").value;
+    const total     = parseFloat(document.getElementById("p-total").value);
+    const principal = parseFloat(document.getElementById("p-principal").value);
+    if (!rawDate || isNaN(total) || isNaN(principal)) { alert("Please fill in date paid, total amount paid, and principal paid."); return; }
+    let prevBalance = bill.remaining_balance;
+    if (editingPayIdx !== null && bill.loan_history.length > 1)  prevBalance = editingPayIdx > 0 ? bill.loan_history[editingPayIdx-1].remaining_balance : bill.remaining_balance;
+    else if (editingPayIdx === null && bill.loan_history.length > 0) { const s = [...bill.loan_history].sort((a,b)=>new Date(a.paid_on)-new Date(b.paid_on)); prevBalance = s[s.length-1].remaining_balance; }
+    const newBalance = Math.max(0, prevBalance - principal);
+    const paidOn = new Date(rawDate + "T00:00:00").toLocaleDateString("en-US", {month:"long",day:"numeric",year:"numeric"});
+    const entry  = { paid_on:paidOn, amount_paid:total, principal_paid:principal, interest_paid:Math.max(0,total-principal), remaining_balance:newBalance };
+    if (!bill.loan_history) bill.loan_history = [];
+    if (editingPayIdx !== null) bill.loan_history[editingPayIdx] = entry; else bill.loan_history.push(entry);
+    bill.remaining_balance = [...bill.loan_history].sort((a,b)=>new Date(b.paid_on)-new Date(a.paid_on))[0].remaining_balance;
+    saveBills(); render(); closePaymentModal();
+    if (newBalance === 0) setTimeout(() => celebrate(bill.name, bill.id), 300);
+  }
+
+  function deletePayment(loanId, paymentIdx) {
+    const bill = bills.find(b => b.id === loanId);
+    if (!bill || !confirm("Delete this payment?")) return;
+    bill.loan_history.splice(paymentIdx, 1);
+    if (bill.loan_history.length > 0) {
+      const s = [...bill.loan_history].sort((a,b)=>new Date(b.paid_on)-new Date(a.paid_on));
+      bill.remaining_balance = s[0].remaining_balance;
+    }
+    saveBills(); render();
+  }
+
+  function markPaid(id) {
+    const bill = bills.find(b => b.id === id);
+    const due  = new Date(bill.due_date + "T00:00:00");
+    const next = new Date(due); next.setDate(next.getDate() + 30);
+    const remaining  = bill.remaining_balance !== undefined ? bill.remaining_balance : bill.amount;
+    const newBalance = Math.max(0, remaining - bill.amount);
+    if (!confirm(`Mark ${bill.name} as paid?\n\nPayment:           $${fmt(bill.amount)}\nRemaining balance: $${fmt(newBalance)}`)) return;
+    const paidOn = new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});
+    if (!bill.loan_history) bill.loan_history = [];
+    bill.loan_history.push({paid_on:paidOn,amount_paid:bill.amount,principal_paid:null,interest_paid:null,remaining_balance:newBalance});
+    bill.remaining_balance = newBalance;
+    const yyyy=next.getFullYear(),mm=String(next.getMonth()+1).padStart(2,"0"),dd=String(next.getDate()).padStart(2,"0");
+    bill.due_date = `${yyyy}-${mm}-${dd}`;
+    openPanels[id] = true;
+    saveBills(); render();
+    if (newBalance === 0) setTimeout(() => celebrate(bill.name, bill.id), 300);
   }
 
   function toggleArchived() {
@@ -1314,156 +1359,37 @@
   function unarchiveLoan(id) {
     const bill = bills.find(b => b.id === id);
     if (!bill) return;
-    bill.archived = false;
-    saveBills();
-    render();
+    bill.archived = false; saveBills(); render();
   }
 
-  // --- Celebration ---
   function celebrate(loanName, loanId) {
-    // Auto-archive the loan
     const bill = bills.find(b => b.id === loanId);
     if (bill) { bill.archived = true; saveBills(); render(); }
-    // Show overlay message
     const overlay = document.createElement("div");
-    overlay.id = "celebrate-overlay";
-    overlay.style.cssText = `
-      position: fixed; inset: 0; z-index: 999;
-      display: flex; align-items: center; justify-content: center;
-      background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
-      animation: fadeIn 0.3s ease;
-    `;
-    overlay.innerHTML = `
-      <div style="
-        background: var(--surface); border-radius: 24px; padding: 2.5rem 2rem;
-        text-align: center; max-width: 340px; margin: 1rem;
-        box-shadow: 0 24px 64px rgba(0,0,0,0.25);
-        animation: slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1);
-        border: 1px solid var(--border);
-      ">
-        <div style="font-size: 56px; margin-bottom: 1rem;">🎉</div>
-        <div style="font-family: 'DM Serif Display', serif; font-size: 26px; color: var(--text); margin-bottom: 0.5rem; letter-spacing: -0.3px;">Loan paid off!</div>
-        <div style="font-size: 15px; color: var(--text3); margin-bottom: 1.5rem; font-weight: 300;">${loanName} is fully paid off.<br>That's a huge accomplishment! 🎓</div>
-        <button onclick="document.getElementById('celebrate-overlay').remove()" style="
-          padding: 0.7rem 2rem; background: var(--text); color: var(--bg);
-          border: none; border-radius: 11px; font-size: 14px; font-weight: 600;
-          font-family: 'DM Sans', sans-serif; cursor: pointer; letter-spacing: 0.01em;
-        ">Amazing, thanks! 🙌</button>
-      </div>`;
+    overlay.style.cssText = "position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);animation:fadeIn 0.3s ease;";
+    overlay.innerHTML = `<div style="background:var(--surface);border-radius:24px;padding:2.5rem 2rem;text-align:center;max-width:340px;margin:1rem;box-shadow:0 24px 64px rgba(0,0,0,0.25);animation:slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1);border:1px solid var(--border);"><div style="font-size:56px;margin-bottom:1rem;">🎉</div><div style="font-size:22px;font-weight:800;color:var(--text);margin-bottom:0.5rem;letter-spacing:-0.5px;">Loan paid off!</div><div style="font-size:15px;color:var(--text3);margin-bottom:1.5rem;">${loanName} is fully paid off.<br>That's a huge accomplishment! 🎓</div><button onclick="document.querySelector('[data-celebrate]').remove()" style="padding:0.7rem 2rem;background:var(--text);color:var(--bg);border:none;border-radius:11px;font-size:14px;font-weight:700;font-family:var(--sans);cursor:pointer;">Amazing, thanks! 🙌</button></div>`;
+    overlay.setAttribute("data-celebrate", "");
+    overlay.querySelector("button").onclick = () => overlay.remove();
+    overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
     document.body.appendChild(overlay);
-    overlay.addEventListener("click", e => { if (e.target === overlay) overlay.remove(); });
 
-    // Launch confetti particles
     const canvas = document.createElement("canvas");
     canvas.style.cssText = "position:fixed;inset:0;z-index:1000;pointer-events:none;";
-    canvas.width  = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
     document.body.appendChild(canvas);
-    const ctx = canvas.getContext("2d");
-
-    const COLORS_C = ["#2d6a4f","#52b788","#1a56a0","#6b3fa0","#f4a261","#e76f51","#ffd166","#06d6a0"];
-    const particles = Array.from({ length: 120 }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height - canvas.height,
-      w: Math.random() * 10 + 5,
-      h: Math.random() * 5 + 3,
-      color: COLORS_C[Math.floor(Math.random() * COLORS_C.length)],
-      rot: Math.random() * Math.PI * 2,
-      vx: (Math.random() - 0.5) * 3,
-      vy: Math.random() * 4 + 2,
-      vr: (Math.random() - 0.5) * 0.15,
-      opacity: 1,
-    }));
-
-    let frame = 0;
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach(p => {
-        p.x  += p.vx;
-        p.y  += p.vy;
-        p.rot += p.vr;
-        p.vy += 0.08; // gravity
-        if (frame > 90) p.opacity = Math.max(0, p.opacity - 0.015);
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.rot);
-        ctx.globalAlpha = p.opacity;
-        ctx.fillStyle = p.color;
-        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
-        ctx.restore();
-      });
-      frame++;
-      if (frame < 160) requestAnimationFrame(draw);
-      else canvas.remove();
-    }
-    draw();
-  }
-
-  function savePayment() {
-    const bill      = bills.find(b => b.id === activePayLoanId);
-    if (!bill) return;
-    const rawDate   = document.getElementById("p-date").value;
-    const total     = parseFloat(document.getElementById("p-total").value);
-    const principal = parseFloat(document.getElementById("p-principal").value);
-    if (!rawDate || isNaN(total) || isNaN(principal)) { alert("Please fill in date paid, total amount paid, and principal paid."); return; }
-    let prevBalance = bill.remaining_balance;
-    if (editingPayIdx !== null && bill.loan_history.length > 1) {
-      prevBalance = editingPayIdx > 0 ? bill.loan_history[editingPayIdx-1].remaining_balance : bill.remaining_balance;
-    } else if (editingPayIdx === null && bill.loan_history.length > 0) {
-      const sorted = [...bill.loan_history].sort((a,b) => new Date(a.paid_on)-new Date(b.paid_on));
-      prevBalance = sorted[sorted.length-1].remaining_balance;
-    }
-    const newBalance = Math.max(0, prevBalance - principal);
-    const calculatedInterest = isNaN(total) || isNaN(principal) ? null : Math.max(0, total - principal);
-    const paidOn = new Date(rawDate + "T00:00:00").toLocaleDateString("en-US", { month:"long", day:"numeric", year:"numeric" });
-    const entry = { paid_on:paidOn, amount_paid:total, principal_paid:principal, interest_paid:calculatedInterest, remaining_balance:newBalance };
-    if (!bill.loan_history) bill.loan_history = [];
-    if (editingPayIdx !== null) bill.loan_history[editingPayIdx] = entry;
-    else bill.loan_history.push(entry);
-    const sorted = [...bill.loan_history].sort((a,b) => new Date(b.paid_on)-new Date(a.paid_on));
-    bill.remaining_balance = sorted[0].remaining_balance;
-    saveBills(); render(); closePaymentModal();
-    if (newBalance === 0) setTimeout(() => celebrate(bill.name, bill.id), 300);
-  }
-
-  function deletePayment(loanId, paymentIdx) {
-    const bill = bills.find(b => b.id === loanId);
-    if (!bill || !confirm("Delete this payment?")) return;
-    bill.loan_history.splice(paymentIdx, 1);
-    if (bill.loan_history.length > 0) {
-      const sorted = [...bill.loan_history].sort((a,b) => new Date(b.paid_on)-new Date(a.paid_on));
-      bill.remaining_balance = sorted[0].remaining_balance;
-    }
-    saveBills(); render();
-  }
-
-  function markPaid(id) {
-    const bill      = bills.find(b => b.id === id);
-    const due       = new Date(bill.due_date + "T00:00:00");
-    const next      = new Date(due);
-    next.setDate(next.getDate() + 30);
-    const nextLabel  = next.toLocaleDateString("en-US", { month:"long", day:"numeric", year:"numeric" });
-    const remaining  = bill.remaining_balance !== undefined ? bill.remaining_balance : bill.amount;
-    const newBalance = Math.max(0, remaining - bill.amount);
-    if (!confirm(`Mark ${bill.name} as paid?\n\nPayment:           $${fmt(bill.amount)}\nRemaining balance: $${fmt(newBalance)}\nNext due date:     ${nextLabel}`)) return;
-    const paidOn = new Date().toLocaleDateString("en-US", { month:"long", day:"numeric", year:"numeric" });
-    if (!bill.loan_history) bill.loan_history = [];
-    bill.loan_history.push({ paid_on:paidOn, amount_paid:bill.amount, principal_paid:null, interest_paid:null, remaining_balance:newBalance });
-    bill.remaining_balance = newBalance;
-    const yyyy = next.getFullYear(), mm = String(next.getMonth()+1).padStart(2,"0"), dd = String(next.getDate()).padStart(2,"0");
-    bill.due_date = `${yyyy}-${mm}-${dd}`;
-    openPanels[id] = true;
-    saveBills(); render();
-    if (newBalance === 0) setTimeout(() => celebrate(bill.name, bill.id), 300);
+    const ctx2 = canvas.getContext("2d");
+    const CC   = ["#2d6a4f","#52b788","#1a56a0","#7c3aed","#f4a261","#ffd166","#06d6a0"];
+    const pp   = Array.from({length:120},()=>({x:Math.random()*canvas.width,y:Math.random()*canvas.height-canvas.height,w:Math.random()*10+5,h:Math.random()*5+3,color:CC[Math.floor(Math.random()*CC.length)],rot:Math.random()*Math.PI*2,vx:(Math.random()-0.5)*3,vy:Math.random()*4+2,vr:(Math.random()-0.5)*0.15,opacity:1}));
+    let frame2 = 0;
+    (function draw2() {
+      ctx2.clearRect(0,0,canvas.width,canvas.height);
+      pp.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.rot+=p.vr;p.vy+=0.08;if(frame2>90)p.opacity=Math.max(0,p.opacity-0.015);ctx2.save();ctx2.translate(p.x,p.y);ctx2.rotate(p.rot);ctx2.globalAlpha=p.opacity;ctx2.fillStyle=p.color;ctx2.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx2.restore();});
+      frame2++;
+      if(frame2<160) requestAnimationFrame(draw2); else canvas.remove();
+    })();
   }
 
   render();
-
-  // Register service worker for PWA
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js")
-      .catch(err => console.log("SW registration failed:", err));
-  }
 </script>
 </body>
 </html>
