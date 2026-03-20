@@ -651,7 +651,10 @@
       <h1>Student Loans</h1>
       <p id="today-label"></p>
     </div>
-    <button class="dark-toggle" onclick="toggleDark()" id="dark-toggle-btn" title="Toggle dark mode">🌙</button>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="dark-toggle" onclick="exportCSV()" title="Export to CSV" style="font-size:13px;font-family:var(--sans);font-weight:600;padding:8px 14px;">⬇ Export</button>
+      <button class="dark-toggle" onclick="toggleDark()" id="dark-toggle-btn" title="Toggle dark mode">🌙</button>
+    </div>
   </div>
 
   <div class="summary">
@@ -1388,6 +1391,33 @@
       frame2++;
       if(frame2<160) requestAnimationFrame(draw2); else canvas.remove();
     })();
+  }
+
+  function exportCSV() {
+    const today = new Date().toLocaleDateString("en-US");
+    const rows  = [["Loan Name","Type","Interest Rate (%)","Monthly Payment","Starting Balance","Remaining Balance","Payments Made","Date Exported"]];
+    bills.forEach(b => {
+      rows.push([
+        b.name, b.loan_type || "",
+        b.interest_rate !== null && b.interest_rate !== undefined ? b.interest_rate : "",
+        b.amount, b.starting_balance || "", b.remaining_balance || "",
+        (b.loan_history || []).length, today,
+      ]);
+    });
+    rows.push([]);
+    rows.push(["--- Payment History ---"]);
+    rows.push(["Loan Name","Date Paid","Amount Paid","Principal Paid","Interest Paid","Remaining Balance"]);
+    bills.forEach(b => {
+      (b.loan_history || []).forEach(e => {
+        rows.push([b.name, e.paid_on, e.amount_paid, e.principal_paid ?? "", e.interest_paid ?? "", e.remaining_balance]);
+      });
+    });
+    const csv  = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url  = URL.createObjectURL(blob);
+    const a    = Object.assign(document.createElement("a"), { href: url, download: "student_loans.csv" });
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   render();
