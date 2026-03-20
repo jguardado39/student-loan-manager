@@ -196,12 +196,13 @@
     .loan-block {
       border-radius: 16px;
       border: 1px solid var(--border);
-      overflow: hidden;
+      overflow: visible;
       background: var(--surface);
       box-shadow: var(--shadow);
       transition: box-shadow 0.2s, transform 0.2s;
       animation: fadeUp 0.35s ease both;
       position: relative;
+      isolation: isolate;
     }
     .loan-block:hover { box-shadow: var(--shadow-lg); transform: translateY(-1px); }
     .loan-block:nth-child(1) { animation-delay: 0.05s; }
@@ -424,7 +425,7 @@
     .badge-unsubsidized { background: var(--warn-soft);   color: var(--warn); }
 
     /* ── Three-dot menu ── */
-    .menu-wrap { position: relative; }
+    .menu-wrap { position: relative; z-index: 200; }
     .menu-trigger {
       width: 28px; height: 28px; border-radius: 999px;
       border: 1px solid var(--border); background: none;
@@ -439,7 +440,7 @@
       position: absolute; right: 0; top: calc(100% + 6px);
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 12px; box-shadow: var(--shadow-lg);
-      min-width: 160px; z-index: 50; overflow: hidden;
+      min-width: 160px; z-index: 9999; overflow: hidden;
       animation: fadeIn 0.12s ease;
     }
     .menu-item {
@@ -464,7 +465,7 @@
     .expand-btn.open { background: var(--loan-color-soft, var(--accent-soft)); border-color: var(--loan-color, var(--accent)); color: var(--loan-color, var(--accent)); }
 
     /* ── History Panel ── */
-    .history-panel { display: none; border-top: 1px solid var(--border2); background: var(--surface2); }
+    .history-panel { display: none; border-top: 1px solid var(--border2); background: var(--surface2); border-radius: 0 0 16px 16px; overflow: hidden; }
     .history-panel.open { display: block; animation: slideDown 0.18s ease; }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
 
