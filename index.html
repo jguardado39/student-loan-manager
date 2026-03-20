@@ -632,6 +632,15 @@
     }
     .btn-secondary:hover { background: var(--surface2); }
 
+    .pay-link {
+      color: var(--loan-color, var(--accent));
+      font-weight: 600;
+      text-decoration: none;
+      font-size: 11px;
+      transition: opacity 0.15s;
+    }
+    .pay-link:hover { opacity: 0.7; text-decoration: underline; }
+
     @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
     @media (max-width: 520px) {
@@ -730,6 +739,7 @@
     </div>
     <div class="form-group"><label class="form-label">Starting balance ($)</label><input id="f-start-balance" type="number" placeholder="0.00" step="0.01" /></div>
     <div class="form-group"><label class="form-label">Next due date</label><input id="f-day" type="date" /></div>
+    <div class="form-group"><label class="form-label">Payment website URL (optional)</label><input id="f-url" type="text" placeholder="https://studentaid.gov/..." /></div>
     <div class="form-actions">
       <button class="btn-secondary" onclick="closeLoanModal()">Cancel</button>
       <button class="btn-primary" id="loan-modal-save" onclick="saveLoan()">Add loan</button>
@@ -933,7 +943,7 @@
               ? `<span class="badge badge-ok">Paid off 🎓</span>`
               : `<span class="badge ${status.cls}">${status.label}</span>`}
           </div>
-          <div class="bill-meta">${isArchived ? "Paid off" : `Due ${dateLabel}`}</div>
+          <div class="bill-meta">${isArchived ? "Paid off" : `Due ${dateLabel}`}${bill.payment_url && !isArchived ? ` &nbsp;·&nbsp; <a href="${bill.payment_url}" target="_blank" rel="noopener" class="pay-link" onclick="event.stopPropagation()">Make a payment →</a>` : ""}</div>
         </div>
         <div class="loan-balance-block">
           <div class="loan-balance-remaining">$${fmt(remaining)}</div>
@@ -949,6 +959,7 @@
                 ? `<button class="menu-item" onclick="unarchiveLoan(${bill.id}); closeMenu(${bill.id})">↩️ &nbsp;Restore loan</button>`
                 : `<button class="menu-item" onclick="markPaid(${bill.id}); closeMenu(${bill.id})">✅ &nbsp;Mark as paid</button>`
               }
+              ${bill.payment_url && !isArchived ? `<a class="menu-item" href="${bill.payment_url}" target="_blank" rel="noopener" onclick="closeMenu(${bill.id})" style="text-decoration:none;">🌐 &nbsp;Make a payment</a>` : ""}
               <button class="menu-item" onclick="openLoanModal(${bill.id}); closeMenu(${bill.id})">✏️ &nbsp;Edit loan</button>
               <div class="menu-divider"></div>
               <button class="menu-item danger" onclick="deleteLoan(${bill.id}); closeMenu(${bill.id})">🗑️ &nbsp;Delete loan</button>
@@ -1227,6 +1238,7 @@
     document.getElementById("f-rate").value          = bill ? (bill.interest_rate || "") : "";
     document.getElementById("f-start-balance").value = starting;
     document.getElementById("f-day").value           = bill ? bill.due_date : "";
+    document.getElementById("f-url").value           = bill ? (bill.payment_url || "") : "";
     document.getElementById("loan-modal-title").textContent = bill ? "Edit loan" : "New student loan";
     document.getElementById("loan-modal-save").textContent  = bill ? "Save changes" : "Add loan";
     document.getElementById("loan-modal").classList.remove("hidden");
@@ -1241,6 +1253,7 @@
     const rate      = parseFloat(document.getElementById("f-rate").value);
     const starting  = parseFloat(document.getElementById("f-start-balance").value);
     const due_date  = document.getElementById("f-day").value;
+    const pay_url   = document.getElementById("f-url").value.trim();
     if (!name || isNaN(amount) || isNaN(starting) || !due_date) { alert("Please fill in all required fields."); return; }
     if (editingLoanId) {
       const bill = bills.find(b => b.id === editingLoanId);
@@ -1248,8 +1261,9 @@
       bill.interest_rate = isNaN(rate) ? null : rate; bill.starting_balance = starting;
       if (!bill.loan_history || bill.loan_history.length === 0) bill.remaining_balance = starting;
       bill.due_date = due_date;
+      bill.payment_url = pay_url || null;
     } else {
-      bills.push({ id: Date.now(), name, loan_type, amount, due_date, interest_rate: isNaN(rate) ? null : rate, starting_balance: starting, remaining_balance: starting, loan_history: [] });
+      bills.push({ id: Date.now(), name, loan_type, amount, due_date, payment_url: pay_url || null, interest_rate: isNaN(rate) ? null : rate, starting_balance: starting, remaining_balance: starting, loan_history: [] });
     }
     closeLoanModal(); saveBills(); render();
   }
