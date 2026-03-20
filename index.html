@@ -1088,8 +1088,11 @@
       } else {
         const sorted = [...bill.loan_history]
           .map((e,i) => ({e,i}))
-          .sort((a,b) => (b.e.paid_on_raw||b.e.paid_on) > (a.e.paid_on_raw||a.e.paid_on) ? 1 : -1)
-          .reverse(); // newest first
+          .sort((a,b) => {
+            const da = a.e.paid_on_raw || a.e.paid_on;
+            const db = b.e.paid_on_raw || b.e.paid_on;
+            return db > da ? 1 : db < da ? -1 : 0; // newest first
+          });
 
         const preview = sorted.slice(0, 5);
 
@@ -1391,19 +1394,43 @@
     preview.style.color = interest > 0 ? "var(--danger)" : "var(--text3)";
   }
 
+  function recomputeBalances(bill) {
+    // Sort history oldest → newest, then walk forward subtracting principal from starting_balance
+    const starting = bill.starting_balance || 0;
+    const chronological = [...bill.loan_history].sort((a,b) => {
+      const da = a.paid_on_raw || a.paid_on;
+      const db = b.paid_on_raw || b.paid_on;
+      return da > db ? 1 : da < db ? -1 : 0;
+    });
+    let balance = starting;
+    chronological.forEach(entry => {
+      balance = Math.max(0, balance - (entry.principal_paid || 0));
+      entry.remaining_balance = balance;
+    });
+    // Write back with corrected balances (match by paid_on_raw)
+    bill.loan_history.forEach(e => {
+      const match = chronological.find(c => (c.paid_on_raw||c.paid_on) === (e.paid_on_raw||e.paid_on) && c.amount_paid === e.amount_paid);
+      if (match) e.remaining_balance = match.remaining_balance;
+    });
+    // Set bill.remaining_balance to the latest entry's balance
+    bill.remaining_balance = chronological.length > 0
+      ? chronological[chronological.length - 1].remaining_balance
+      : starting;
+  }
+
   function updateBalancePreview() {
     const bill = bills.find(b => b.id === activePayLoanId); if (!bill) return;
     const principal = parseFloat(document.getElementById("p-principal").value);
     const preview = document.getElementById("p-balance-preview");
     if (isNaN(principal)) { preview.textContent = "—"; preview.style.color = "var(--text4)"; return; }
-    let prevBalance = bill.remaining_balance;
-    if (editingPayIdx !== null && bill.loan_history.length > 1) {
-      prevBalance = editingPayIdx > 0 ? bill.loan_history[editingPayIdx-1].remaining_balance : bill.remaining_balance;
-    } else if (editingPayIdx === null && bill.loan_history.length > 0) {
-      const sorted = [...bill.loan_history].sort((a,b) => (a.paid_on_raw||a.paid_on) > (b.paid_on_raw||b.paid_on) ? 1 : -1);
-      prevBalance = sorted[sorted.length-1].remaining_balance;
-    }
-    preview.textContent = "$" + fmt(Math.max(0, prevBalance - principal));
+    // Simulate: what would balance be after this payment?
+    const starting = bill.starting_balance || 0;
+    const totalPrincipalSoFar = (bill.loan_history || []).reduce((s, e, idx) => {
+      if (editingPayIdx !== null && idx === editingPayIdx) return s; // skip entry being edited
+      return s + (e.principal_paid || 0);
+    }, 0);
+    const newBalance = Math.max(0, starting - totalPrincipalSoFar - principal);
+    preview.textContent = "$" + fmt(newBalance);
     preview.style.color = "var(--accent)";
   }
 
@@ -1413,16 +1440,13 @@
     const total     = parseFloat(document.getElementById("p-total").value);
     const principal = parseFloat(document.getElementById("p-principal").value);
     if (!rawDate || isNaN(total) || isNaN(principal)) { alert("Please fill in date paid, total amount paid, and principal paid."); return; }
-    let prevBalance = bill.remaining_balance;
-    if (editingPayIdx !== null && bill.loan_history.length > 1)  prevBalance = editingPayIdx > 0 ? bill.loan_history[editingPayIdx-1].remaining_balance : bill.remaining_balance;
-    else if (editingPayIdx === null && bill.loan_history.length > 0) { const s = [...bill.loan_history].sort((a,b)=>new Date(a.paid_on)-new Date(b.paid_on)); prevBalance = s[s.length-1].remaining_balance; }
-    const newBalance = Math.max(0, prevBalance - principal);
     const paidOn = new Date(rawDate + "T00:00:00").toLocaleDateString("en-US", {month:"long",day:"numeric",year:"numeric"});
-    const entry  = { paid_on:paidOn, paid_on_raw:rawDate, amount_paid:total, principal_paid:principal, interest_paid:Math.max(0,total-principal), remaining_balance:newBalance };
+    const entry  = { paid_on:paidOn, paid_on_raw:rawDate, amount_paid:total, principal_paid:principal, interest_paid:Math.max(0,total-principal), remaining_balance:0 };
     if (!bill.loan_history) bill.loan_history = [];
     if (editingPayIdx !== null) bill.loan_history[editingPayIdx] = entry; else bill.loan_history.push(entry);
-    // Sort by raw ISO date so remaining_balance is always taken from the true latest payment
-    bill.remaining_balance = [...bill.loan_history].sort((a,b) => (a.paid_on_raw||a.paid_on) > (b.paid_on_raw||b.paid_on) ? -1 : 1)[0].remaining_balance;
+    // Recompute all balances from starting_balance in chronological order
+    recomputeBalances(bill);
+    const newBalance = bill.remaining_balance;
     saveBills(); render(); closePaymentModal();
     if (newBalance === 0) setTimeout(() => celebrate(bill.name, bill.id), 300);
   }
@@ -1431,10 +1455,8 @@
     const bill = bills.find(b => b.id === loanId);
     if (!bill || !confirm("Delete this payment?")) return;
     bill.loan_history.splice(paymentIdx, 1);
-    if (bill.loan_history.length > 0) {
-      const s = [...bill.loan_history].sort((a,b) => (a.paid_on_raw||a.paid_on) > (b.paid_on_raw||b.paid_on) ? -1 : 1);
-      bill.remaining_balance = s[0].remaining_balance;
-    }
+    if (bill.loan_history.length > 0) recomputeBalances(bill);
+    else bill.remaining_balance = bill.starting_balance || 0;
     saveBills(); render();
   }
 
@@ -1517,8 +1539,11 @@
     // All payment rows, newest first
     const sorted = [...(bill.loan_history||[])]
       .map((e,i) => ({e,i}))
-      .sort((a,b) => (b.e.paid_on_raw||b.e.paid_on) > (a.e.paid_on_raw||a.e.paid_on) ? 1 : -1)
-      .reverse();
+      .sort((a,b) => {
+        const da = a.e.paid_on_raw || a.e.paid_on;
+        const db = b.e.paid_on_raw || b.e.paid_on;
+        return db > da ? 1 : db < da ? -1 : 0;
+      });
 
     const listEl = document.getElementById("all-payments-list");
     listEl.innerHTML = "";
