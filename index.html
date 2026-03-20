@@ -1310,7 +1310,7 @@
     if (editingPayIdx !== null && bill.loan_history.length > 1) {
       prevBalance = editingPayIdx > 0 ? bill.loan_history[editingPayIdx-1].remaining_balance : bill.remaining_balance;
     } else if (editingPayIdx === null && bill.loan_history.length > 0) {
-      const sorted = [...bill.loan_history].sort((a,b) => new Date(a.paid_on)-new Date(b.paid_on));
+      const sorted = [...bill.loan_history].sort((a,b) => (a.paid_on_raw||a.paid_on) > (b.paid_on_raw||b.paid_on) ? 1 : -1);
       prevBalance = sorted[sorted.length-1].remaining_balance;
     }
     preview.textContent = "$" + fmt(Math.max(0, prevBalance - principal));
@@ -1328,10 +1328,11 @@
     else if (editingPayIdx === null && bill.loan_history.length > 0) { const s = [...bill.loan_history].sort((a,b)=>new Date(a.paid_on)-new Date(b.paid_on)); prevBalance = s[s.length-1].remaining_balance; }
     const newBalance = Math.max(0, prevBalance - principal);
     const paidOn = new Date(rawDate + "T00:00:00").toLocaleDateString("en-US", {month:"long",day:"numeric",year:"numeric"});
-    const entry  = { paid_on:paidOn, amount_paid:total, principal_paid:principal, interest_paid:Math.max(0,total-principal), remaining_balance:newBalance };
+    const entry  = { paid_on:paidOn, paid_on_raw:rawDate, amount_paid:total, principal_paid:principal, interest_paid:Math.max(0,total-principal), remaining_balance:newBalance };
     if (!bill.loan_history) bill.loan_history = [];
     if (editingPayIdx !== null) bill.loan_history[editingPayIdx] = entry; else bill.loan_history.push(entry);
-    bill.remaining_balance = [...bill.loan_history].sort((a,b)=>new Date(b.paid_on)-new Date(a.paid_on))[0].remaining_balance;
+    // Sort by raw ISO date so remaining_balance is always taken from the true latest payment
+    bill.remaining_balance = [...bill.loan_history].sort((a,b) => (a.paid_on_raw||a.paid_on) > (b.paid_on_raw||b.paid_on) ? -1 : 1)[0].remaining_balance;
     saveBills(); render(); closePaymentModal();
     if (newBalance === 0) setTimeout(() => celebrate(bill.name, bill.id), 300);
   }
@@ -1341,7 +1342,7 @@
     if (!bill || !confirm("Delete this payment?")) return;
     bill.loan_history.splice(paymentIdx, 1);
     if (bill.loan_history.length > 0) {
-      const s = [...bill.loan_history].sort((a,b)=>new Date(b.paid_on)-new Date(a.paid_on));
+      const s = [...bill.loan_history].sort((a,b) => (a.paid_on_raw||a.paid_on) > (b.paid_on_raw||b.paid_on) ? -1 : 1);
       bill.remaining_balance = s[0].remaining_balance;
     }
     saveBills(); render();
