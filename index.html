@@ -8,8 +8,6 @@
   <!-- Preconnect to all external domains so DNS + TLS handshakes happen early -->
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
-  <link rel="preconnect" href="https://firebaseapp.com" crossorigin>
   <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
 
   <!-- Load fonts asynchronously so they never block render -->
@@ -566,6 +564,16 @@
       box-shadow: var(--shadow);
     }
     .google-btn-header:hover { background: var(--surface2); transform: translateY(-1px); }
+
+    /* ── Gist Token Modal ── */
+    .gist-modal-steps { display:flex; flex-direction:column; gap:8px; margin-bottom:1.25rem; }
+    .gist-step { display:flex; gap:10px; align-items:flex-start; }
+    .gist-step-num { width:22px; height:22px; border-radius:50%; background:var(--accent); color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+    .gist-step-text { font-size:13px; color:var(--text2); line-height:1.5; }
+    .gist-step-text a { color:var(--accent); text-decoration:none; font-weight:600; }
+    .gist-step-text a:hover { text-decoration:underline; }
+    .token-input-wrap { display:flex; gap:8px; }
+    .token-input-wrap input { flex:1; font-family:var(--mono); font-size:13px; }
   </style>
 </head>
 <body>
@@ -577,7 +585,7 @@
       <span class="signin-banner-emoji">👀</span>
       <div>
         <div class="signin-banner-title">You are viewing sample data</div>
-        <div class="signin-banner-sub">Sign in using the button above to load and sync your real loans across all your devices</div>
+        <div class="signin-banner-sub">Connect your GitHub account using the button above to load and sync your real loans across all your devices</div>
       </div>
     </div>
   </div>
@@ -610,7 +618,7 @@
               <div class="user-dropdown-name" id="dropdown-name">—</div>
               <div class="user-dropdown-email" id="dropdown-email">—</div>
             </div>
-            <button class="user-dropdown-item danger" onclick="signOutUser()">🚪 &nbsp;Sign out</button>
+            <button class="user-dropdown-item danger" onclick="signOutUser()">🔌 &nbsp;Disconnect GitHub</button>
           </div>
           <!-- Shown when signed out -->
           <button class="google-btn-header" onclick="signInWithGoogle()" id="signin-header-btn">
@@ -620,7 +628,7 @@
               <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
               <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
             </svg>
-            Sign in
+            Connect GitHub
           </button>
         </div>
       </div>
@@ -770,188 +778,193 @@
   }
 </script>
 
-<!-- Firebase SDK -->
-<script type="module">
-  import { initializeApp }                          from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
-                                                    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc, onSnapshot }
-                                                    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+<!-- GitHub Gist Sync -->
+<script>
+  // ── GitHub Gist Storage ───────────────────────────────────────────────────
+  // Token and Gist ID are stored only in localStorage on the user's device.
+  // They are never hardcoded or sent anywhere except the GitHub API.
 
-  // ── Firebase Config ──────────────────────────────────────────────────────
-  const firebaseConfig = {
-    apiKey:            "AIzaSyDXWQiGbTh3RSY9PeLvnRYe5eWG0c81JHo",
-    authDomain:        "student-loan-manager-a5900.firebaseapp.com",
-    projectId:         "student-loan-manager-a5900",
-    storageBucket:     "student-loan-manager-a5900.firebasestorage.app",
-    messagingSenderId: "702706385885",
-    appId:             "1:702706385885:web:566aa21ac5fd76d7d26c34"
-  };
+  const GIST_FILENAME = "student_loans.json";
 
-  const firebaseApp = initializeApp(firebaseConfig);
-  const auth        = getAuth(firebaseApp);
-  const db          = getFirestore(firebaseApp);
+  function getToken()  { return localStorage.getItem("gh-token")  || ""; }
+  function getGistId() { return localStorage.getItem("gh-gist-id") || ""; }
 
-  let unsubscribeSnapshot = null; // holds the Firestore listener so we can detach on sign-out
-
-  // ── Expose Firebase functions to global scope ────────────────────────────
-  // Expose UI helpers globally so main script can call them
-  window._setSignedOutUI = function() {
-    var banner = document.getElementById("signin-banner");
-    var signinBtn = document.getElementById("signin-header-btn");
-    var userBtn = document.getElementById("user-btn");
-    var syncBar = document.getElementById("sync-bar");
-    if (banner)    banner.style.display    = "block";
-    if (signinBtn) signinBtn.style.display = "flex";
-    if (userBtn)   userBtn.style.display   = "none";
-    if (syncBar)   syncBar.style.display   = "none";
-  };
-
-  window._fbSignIn = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (e) {
-      console.error("Sign-in error:", e);
-      alert("Sign-in failed. Please try again.");
-    }
-  };
-
-  window._fbSignOut = async () => {
-    if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
-    await signOut(auth);
-  };
-
-  window._fbSave = async (data) => {
-    const user = auth.currentUser;
-    if (!user) return;
-    setSyncStatus("syncing");
-    try {
-      await setDoc(doc(db, "users", user.uid), { bills: data, updatedAt: Date.now() });
-      setSyncStatus("synced");
-    } catch (e) {
-      console.error("Save error:", e);
-      setSyncStatus("error");
-    }
-  };
-
-  // ── Auth state listener ──────────────────────────────────────────────────
-  // The app is already visible with sample data. Firebase just upgrades it.
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      try {
-        // ── Signed in: swap sample data for real user data ──
-        window._isGuestMode = false;
-        setSignedInUI(user);
-        setSyncStatus("syncing");
-
-        // Try local cache first for an instant swap while Firestore loads
-        const cached = localStorage.getItem("slm-bills-cache");
-        if (cached) {
-          try {
-            window.bills     = JSON.parse(cached);
-            window._appReady = true;
-            window.render();
-          } catch(e) { console.warn("Cache parse failed:", e); }
-        } else {
-          // No cache — keep showing sample data until Firestore responds
-          window._appReady = true;
-          window.render();
-        }
-
-        // Live Firestore sync
-        unsubscribeSnapshot = onSnapshot(
-          doc(db, "users", user.uid),
-          (snap) => {
-            try {
-              if (snap.exists() && snap.data().bills && snap.data().bills.length > 0) {
-                window.bills = snap.data().bills;
-                localStorage.setItem("slm-bills-cache", JSON.stringify(window.bills));
-              } else if (!cached) {
-                // Brand new user with no data yet — start with empty array
-                window.bills = [];
-              }
-              window._appReady = true;
-              window.render();
-              setSyncStatus("synced");
-            } catch(e) {
-              console.error("Snapshot render error:", e);
-              setSyncStatus("error");
-            }
-          },
-          (error) => {
-            console.error("Snapshot error:", error);
-            setSyncStatus("error");
-            // Keep whatever is currently shown — don't wipe it
-            window._appReady = true;
-          }
-        );
-      } catch(e) {
-        console.error("Auth sign-in handler error:", e);
-      }
-    } else {
-      // ── Signed out: restore sample data + show guest UI ──
-      try {
-        window._isGuestMode = true;
-        window._appReady    = false;
-        if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
-        localStorage.removeItem("slm-bills-cache");
-        setSignedOutUI();
-        window.bills     = JSON.parse(JSON.stringify(SAMPLE_BILLS));
-        window._appReady = true;
-        window.render();
-      } catch(e) {
-        console.error("Auth sign-out handler error:", e);
-      }
-    }
-  });
-
-  function setSignedInUI(user) {
-    // Hide banner and header sign-in btn, show user account btn
-    document.getElementById("signin-banner").style.display      = "none";
-    document.getElementById("signin-header-btn").style.display  = "none";
-    document.getElementById("user-btn").style.display           = "flex";
-    document.getElementById("sync-bar").style.display           = "flex";
-
-    const name  = user.displayName || "Account";
-    const short = name.split(" ")[0];
-    document.getElementById("user-display-name").textContent = short;
-    document.getElementById("dropdown-name").textContent     = name;
-    document.getElementById("dropdown-email").textContent    = user.email || "";
-
-    const avatarEl = document.getElementById("user-avatar");
-    if (user.photoURL) {
-      avatarEl.innerHTML = '<img src="' + user.photoURL + '" alt="avatar" />';
-    } else {
-      avatarEl.textContent = name.charAt(0).toUpperCase();
-    }
-  }
-
-  function setSignedOutUI() {
-    // Show banner and header sign-in btn, hide user account btn
-    var banner    = document.getElementById("signin-banner");
-    var signinBtn = document.getElementById("signin-header-btn");
-    var userBtn   = document.getElementById("user-btn");
-    var syncBar   = document.getElementById("sync-bar");
-    if (banner)    banner.style.display    = "block";
-    if (signinBtn) signinBtn.style.display = "flex";
-    if (userBtn)   userBtn.style.display   = "none";
-    if (syncBar)   syncBar.style.display   = "none";
-  }
-
-  function setSyncStatus(state) {
-    const bar   = document.getElementById("sync-bar");
-    const label = document.getElementById("sync-label");
+  function setSyncStatus(state, msg) {
+    var bar   = document.getElementById("sync-bar");
+    var label = document.getElementById("sync-label");
     if (!bar) return;
     bar.className = "sync-bar " + state;
-    label.textContent = state === "synced" ? "Synced" : state === "syncing" ? "Saving…" : "Sync error";
+    label.textContent = msg || (state === "synced" ? "Synced" : state === "syncing" ? "Saving…" : "Sync error");
   }
+
+  // Load data from Gist — called on page load if token exists
+  window.gistLoad = async function() {
+    var token  = getToken();
+    var gistId = getGistId();
+    if (!token) return false;
+    setSyncStatus("syncing", "Loading…");
+    try {
+      var url = gistId
+        ? "https://api.github.com/gists/" + gistId
+        : "https://api.github.com/gists";
+
+      if (!gistId) {
+        // Search user's gists for the loan file
+        var res  = await fetch(url, { headers: { Authorization: "token " + token, Accept: "application/vnd.github+json" } });
+        var list = await res.json();
+        if (!Array.isArray(list)) { setSyncStatus("error", "Token error"); return false; }
+        var found = list.find(function(g) { return g.files && g.files[GIST_FILENAME]; });
+        if (found) {
+          localStorage.setItem("gh-gist-id", found.id);
+          gistId = found.id;
+        } else {
+          // No existing gist — will be created on first save
+          setSyncStatus("synced", "Ready");
+          return true;
+        }
+      }
+
+      var res2  = await fetch("https://api.github.com/gists/" + gistId, { headers: { Authorization: "token " + token, Accept: "application/vnd.github+json" } });
+      var data2 = await res2.json();
+      if (data2.files && data2.files[GIST_FILENAME]) {
+        var raw  = data2.files[GIST_FILENAME].content;
+        var parsed = JSON.parse(raw);
+        window.bills = parsed;
+        localStorage.setItem("slm-bills-cache", raw);
+        setSyncStatus("synced", "Synced");
+        return true;
+      }
+    } catch(e) {
+      console.error("Gist load error:", e);
+      setSyncStatus("error", "Load failed");
+    }
+    return false;
+  };
+
+  // Save data to Gist — called by saveBills()
+  window.gistSave = async function(data) {
+    var token  = getToken();
+    if (!token) return;
+    var gistId = getGistId();
+    setSyncStatus("syncing", "Saving…");
+    try {
+      var body = JSON.stringify({
+        description: "Student Loan Manager Data",
+        public: false,
+        files: { [GIST_FILENAME]: { content: JSON.stringify(data, null, 2) } }
+      });
+      var url    = gistId ? "https://api.github.com/gists/" + gistId : "https://api.github.com/gists";
+      var method = gistId ? "PATCH" : "POST";
+      var res    = await fetch(url, { method: method, headers: { Authorization: "token " + token, Accept: "application/vnd.github+json", "Content-Type": "application/json" }, body: body });
+      var result = await res.json();
+      if (result.id) {
+        localStorage.setItem("gh-gist-id", result.id);
+        setSyncStatus("synced", "Synced");
+      } else {
+        setSyncStatus("error", "Save failed");
+      }
+    } catch(e) {
+      console.error("Gist save error:", e);
+      setSyncStatus("error", "Save failed");
+    }
+  };
+
+  // ── Token Setup ───────────────────────────────────────────────────────────
+  window.saveGistToken = async function() {
+    var input = document.getElementById("gh-token-input");
+    var token = input ? input.value.trim() : "";
+    if (!token) { alert("Please enter a token."); return; }
+    // Validate token by hitting the GitHub API
+    setSyncStatus("syncing", "Validating…");
+    try {
+      var res  = await fetch("https://api.github.com/user", { headers: { Authorization: "token " + token } });
+      var user = await res.json();
+      if (!user.login) { alert("Invalid token — please check and try again."); setSyncStatus("error", "Invalid token"); return; }
+      localStorage.setItem("gh-token",   token);
+      localStorage.removeItem("gh-gist-id"); // reset so we search for existing gist
+      closeGistModal();
+      // Show connected UI
+      setGistConnectedUI(user.login, user.avatar_url);
+      // Load data from Gist
+      var loaded = await window.gistLoad();
+      if (loaded) { window._isGuestMode = false; window.render(); }
+    } catch(e) {
+      alert("Could not connect to GitHub. Check your token and try again.");
+      setSyncStatus("error", "Connection failed");
+    }
+  };
+
+  window.disconnectGist = function() {
+    if (!confirm("Disconnect GitHub? Your local data will be kept but won't sync.")) return;
+    localStorage.removeItem("gh-token");
+    localStorage.removeItem("gh-gist-id");
+    localStorage.removeItem("slm-bills-cache");
+    setGistDisconnectedUI();
+    window._isGuestMode = true;
+    window.bills = JSON.parse(JSON.stringify(SAMPLE_BILLS));
+    window.render();
+    setSyncStatus("synced", "");
+    document.getElementById("sync-bar").style.display = "none";
+  };
+
+  function setGistConnectedUI(username, avatarUrl) {
+    document.getElementById("signin-banner").style.display     = "none";
+    document.getElementById("signin-header-btn").style.display = "none";
+    document.getElementById("user-btn").style.display          = "flex";
+    document.getElementById("sync-bar").style.display          = "flex";
+    document.getElementById("user-display-name").textContent   = username;
+    document.getElementById("dropdown-name").textContent       = username;
+    document.getElementById("dropdown-email").textContent      = "GitHub account";
+    var avatarEl = document.getElementById("user-avatar");
+    if (avatarUrl) {
+      avatarEl.innerHTML = '<img src="' + avatarUrl + '" alt="avatar" />';
+    } else {
+      avatarEl.textContent = username.charAt(0).toUpperCase();
+    }
+  }
+
+  function setGistDisconnectedUI() {
+    document.getElementById("signin-banner").style.display     = "block";
+    document.getElementById("signin-header-btn").style.display = "flex";
+    document.getElementById("user-btn").style.display          = "none";
+    document.getElementById("sync-bar").style.display          = "none";
+  }
+
+  window._setSignedOutUI = setGistDisconnectedUI;
+
+  // ── Auto-connect if token already saved ───────────────────────────────────
+  window._gistAutoConnect = async function() {
+    var token = getToken();
+    if (!token) { setGistDisconnectedUI(); return; }
+    try {
+      var res  = await fetch("https://api.github.com/user", { headers: { Authorization: "token " + token } });
+      var user = await res.json();
+      if (user.login) {
+        setGistConnectedUI(user.login, user.avatar_url);
+        var cached = localStorage.getItem("slm-bills-cache");
+        if (cached) {
+          try { window.bills = JSON.parse(cached); window._isGuestMode = false; window.render(); } catch(e) {}
+        }
+        var loaded = await window.gistLoad();
+        if (loaded) { window._isGuestMode = false; window.render(); }
+      } else {
+        setGistDisconnectedUI();
+      }
+    } catch(e) {
+      setGistDisconnectedUI();
+    }
+  };
+
+  function openGistModal()  { document.getElementById("gist-modal").classList.remove("hidden"); }
+  function closeGistModal() { document.getElementById("gist-modal").classList.add("hidden"); }
+  window.openGistModal  = openGistModal;
+  window.closeGistModal = closeGistModal;
 </script>
 
 <script>
   // ── App State ─────────────────────────────────────────────────────────────
   window._appReady   = false;
-  window._isGuestMode = true; // true until Firebase confirms sign-in
+  window._isGuestMode = true; // true until GitHub token is connected
 
   // Sample data shown immediately to all visitors — no loading wait
   var SAMPLE_BILLS = [
@@ -981,36 +994,35 @@
     "Private Loan":"🏦","Subsidized":"🎓","Unsubsidized":"🎓","Other":"💳"
   };
 
-  // ── Auth wrappers ─────────────────────────────────────────────────────────
-  function signInWithGoogle() { window._fbSignIn && window._fbSignIn(); }
+  // ── Gist wrappers ──────────────────────────────────────────────────────────
+  function signInWithGoogle() { window.openGistModal && window.openGistModal(); }
   function signOutUser() {
-    if (!confirm("Sign out?")) return;
     closeAllMenus();
-    window._fbSignOut && window._fbSignOut();
+    window.disconnectGist && window.disconnectGist();
   }
 
-  // ── Save: writes to Firestore (blocked in guest/sample mode) ───────────
+  // ── Save: writes to Gist (blocked in guest/sample mode) ────────────────
   function saveBills() {
     if (window._isGuestMode) return; // don't persist sample data
     localStorage.setItem("slm-bills-cache", JSON.stringify(window.bills));
-    window._fbSave && window._fbSave(window.bills);
+    window.gistSave && window.gistSave(window.bills);
   }
 
-  // ── Bootstrap: render sample data right away, no waiting ─────────────────
+  // ── Bootstrap: render sample data right away, then auto-connect Gist ──────
   (function() {
     if (localStorage.getItem("darkMode") === "1") document.body.classList.add("dark");
-    // Render sample data immediately — Firebase will upgrade it in background
+    // Render sample data immediately
     window._appReady = true;
     window.render();
-    // Show guest UI as soon as Firebase module registers the helper
-    function tryShowGuestUI() {
-      if (window._setSignedOutUI) {
-        window._setSignedOutUI();
-      } else {
-        setTimeout(tryShowGuestUI, 50);
-      }
+    // If token exists, auto-connect and swap in real data
+    if (window._gistAutoConnect) {
+      window._gistAutoConnect();
+    } else {
+      setTimeout(function() {
+        if (window._gistAutoConnect) window._gistAutoConnect();
+        else if (window._setSignedOutUI) window._setSignedOutUI();
+      }, 100);
     }
-    tryShowGuestUI();
   })();
 
   // ── Dark mode ─────────────────────────────────────────────────────────────
@@ -1696,5 +1708,42 @@
     a.click();URL.revokeObjectURL(url);
   }
 </script>
+
+<!-- GitHub Token Modal -->
+<div class="modal-overlay hidden" id="gist-modal">
+  <div class="modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+      <h2 style="margin-bottom:0;">Connect GitHub</h2>
+      <button onclick="closeGistModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text3);padding:4px;">✕</button>
+    </div>
+    <div class="gist-modal-steps">
+      <div class="gist-step">
+        <div class="gist-step-num">1</div>
+        <div class="gist-step-text">Go to <a href="https://github.com/settings/tokens" target="_blank" rel="noopener">github.com/settings/tokens</a></div>
+      </div>
+      <div class="gist-step">
+        <div class="gist-step-num">2</div>
+        <div class="gist-step-text">Click <strong>Generate new token (classic)</strong></div>
+      </div>
+      <div class="gist-step">
+        <div class="gist-step-num">3</div>
+        <div class="gist-step-text">Give it any name, set expiration to <strong>No expiration</strong>, and check only the <strong>gist</strong> scope</div>
+      </div>
+      <div class="gist-step">
+        <div class="gist-step-num">4</div>
+        <div class="gist-step-text">Copy the token and paste it below — it is stored only on this device</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Personal Access Token</label>
+      <div class="token-input-wrap">
+        <input id="gh-token-input" type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
+        <button class="btn-primary" style="flex:0 0 auto;padding:0.6rem 1rem;" onclick="saveGistToken()">Connect</button>
+      </div>
+    </div>
+    <p style="font-size:11px;color:var(--text4);margin-top:0.75rem;font-family:var(--mono);">Your token is saved only in your browser. It is never sent anywhere except the GitHub API.</p>
+  </div>
+</div>
+
 </body>
 </html>
