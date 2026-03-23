@@ -232,6 +232,9 @@
     .qp-actions{display:flex;gap:10px;margin-top:1.5rem}
     .qp-confirm-btn{flex:1;padding:.7rem 1rem;border:none;border-radius:11px;font-size:14px;font-weight:700;font-family:var(--sans);cursor:pointer;transition:opacity .15s;color:#fff;background:var(--qp-color,var(--accent))}
     .qp-confirm-btn:hover{opacity:.85}
+    .qp-site-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:.6rem 1rem;border:1.5px solid var(--border);border-radius:11px;font-size:13px;font-weight:600;font-family:var(--sans);cursor:pointer;background:none;color:var(--text2);text-decoration:none;transition:all .15s;margin-bottom:10px}
+    .qp-site-btn:hover{background:var(--surface2);border-color:var(--text3)}
+    .qp-site-btn-icon{font-size:14px}
   </style>
 </head>
 <body>
@@ -552,7 +555,7 @@ function render(){
         (bill.loan_type?'<span class="badge '+tbc+'">'+bill.loan_type+'</span>':'')+
         (isArch?'<span class="badge badge-ok">Paid off 🎓</span>':'<span class="badge '+st.cls+'">'+st.label+'</span>')+
       '</div><div class="bill-meta">'+(isArch?'Paid off':'Due '+dl2)+
-        (!isArch?' &nbsp;·&nbsp; <a href="#" class="pay-link" onclick="event.preventDefault();event.stopPropagation();openQuickPay('+bill.id+')">Make a payment →</a>':'')+
+        (bill.payment_url&&!isArch?' &nbsp;·&nbsp; <a href="'+bill.payment_url+'" target="_blank" rel="noopener" class="pay-link" onclick="event.stopPropagation()">Make a payment →</a>':'')+
       '</div></div>'+
       '<div class="loan-balance-block"><div class="loan-balance-remaining">$'+fmt(rem)+'</div><div class="loan-balance-label">remaining</div><div class="loan-monthly">$'+fmt(bill.amount)+'/mo</div></div>'+
       '<div class="card-right">'+
@@ -781,6 +784,17 @@ function openQuickPay(lid) {
   document.getElementById('qp-amount').value = b.amount || '';
   document.getElementById('qp-date').value = new Date().toISOString().split('T')[0];
   document.getElementById('qp-balance-preview').style.display = 'none';
+  // Show/hide payment site button
+  var siteBtn = document.getElementById('qp-site-btn');
+  if(b.payment_url) {
+    siteBtn.href = b.payment_url;
+    var host = '';
+    try { host = new URL(b.payment_url).hostname.replace(/^www\./,''); } catch(e) { host = b.payment_url; }
+    document.getElementById('qp-site-label').textContent = 'Go to ' + host + ' →';
+    siteBtn.style.display = 'flex';
+  } else {
+    siteBtn.style.display = 'none';
+  }
   document.getElementById('quick-pay-modal').classList.remove('hidden');
   updateQPPreview();
   setTimeout(function(){ document.getElementById('qp-amount').select(); }, 50);
@@ -884,16 +898,6 @@ function saveQuickPayment() {
       <div class="qp-header-title" id="qp-title">Make a payment</div>
       <div class="qp-loan-context">
         <div class="qp-context-item">
-          <div class="qp-context-label">Loan</div>
-          <div class="qp-context-value" id="qp-loan-name">—</div>
-        </div>
-        <div class="qp-context-divider"></div>
-        <div class="qp-context-item">
-          <div class="qp-context-label">Current balance</div>
-          <div class="qp-context-value" id="qp-current-balance">—</div>
-        </div>
-        <div class="qp-context-divider"></div>
-        <div class="qp-context-item">
           <div class="qp-context-label">Monthly payment</div>
           <div class="qp-context-value" id="qp-monthly">—</div>
         </div>
@@ -903,8 +907,7 @@ function saveQuickPayment() {
       <div class="qp-field">
         <label class="qp-field-label">Payment amount ($)</label>
         <div class="qp-amount-wrap">
-          <span class="qp-amount-prefix">$</span>
-          <input class="qp-amount-input" id="qp-amount" type="number" placeholder="0.00" step="0.01" oninput="updateQPPreview()"/>
+          <input class="qp-amount-input" id="qp-amount" type="number" placeholder="0.00" step="0.01" oninput="updateQPPreview()" style="padding-left:.85rem"/>
         </div>
         <div class="qp-new-balance" id="qp-balance-preview" style="display:none">
           <span class="qp-new-balance-label">New balance</span>
@@ -916,6 +919,10 @@ function saveQuickPayment() {
         <label class="qp-field-label">Date paid</label>
         <input id="qp-date" type="date"/>
       </div>
+      <a class="qp-site-btn" id="qp-site-btn" href="#" target="_blank" rel="noopener" style="display:none">
+        <span class="qp-site-btn-icon">🌐</span>
+        <span id="qp-site-label">Go to payment site →</span>
+      </a>
       <div class="qp-actions">
         <button class="btn-secondary" onclick="closeQuickPay()">Cancel</button>
         <button class="qp-confirm-btn" id="qp-confirm-btn" onclick="saveQuickPayment()">Confirm payment</button>
