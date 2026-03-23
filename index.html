@@ -181,6 +181,35 @@
     .all-payments-stat-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
     .all-payments-stat-value{font-size:15px;font-weight:500;font-family:var(--mono)}.all-payments-stat-value.red{color:var(--danger)}
     .pay-link{color:var(--loan-color,var(--accent));font-weight:600;text-decoration:none;font-size:11px;transition:opacity .15s}.pay-link:hover{opacity:.7;text-decoration:underline}
+
+    /* ── Sync button ── */
+    .sync-btn{display:flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:7px 13px;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--sans);color:var(--text3);transition:all .15s;box-shadow:var(--shadow);white-space:nowrap}
+    .sync-btn:hover{background:var(--surface2);color:var(--text)}
+    .sync-btn.connected{color:var(--accent);border-color:var(--accent-soft)}
+    .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--text4);flex-shrink:0;transition:background .3s}
+    .sync-btn.connected .sync-dot{background:var(--accent)}
+    .sync-btn.syncing .sync-dot{background:var(--warn);animation:pulse 1s infinite}
+    .sync-btn.error .sync-dot{background:var(--danger)}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+    /* ── Gist modal ── */
+    .gist-steps{display:flex;flex-direction:column;gap:10px;margin-bottom:1.25rem}
+    .gist-step{display:flex;gap:10px;align-items:flex-start}
+    .gist-step-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+    .gist-step-text{font-size:13px;color:var(--text2);line-height:1.5}
+    .gist-step-text a{color:var(--accent);text-decoration:none;font-weight:600}
+    .gist-step-text a:hover{text-decoration:underline}
+    .token-row{display:flex;gap:8px}
+    .token-row input{flex:1;font-family:var(--mono);font-size:13px}
+    .disconnect-btn{width:100%;margin-top:.75rem;padding:.6rem;background:none;border:1.5px solid var(--danger-soft);border-radius:10px;color:var(--danger);font-size:13px;font-family:var(--sans);font-weight:600;cursor:pointer;transition:all .15s}
+    .disconnect-btn:hover{background:var(--danger-soft)}
+
+    /* ── QR Code ── */
+    .qr-section{margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border2)}
+    .qr-title{font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.75rem}
+    .qr-wrap{display:flex;flex-direction:column;align-items:center;gap:.75rem}
+    .qr-canvas-wrap{background:#fff;border-radius:12px;padding:12px;border:1px solid var(--border);display:inline-block}
+    .qr-hint{font-size:12px;color:var(--text3);text-align:center;font-family:var(--mono);line-height:1.5}
+    .qr-hint strong{color:var(--danger)}
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
     @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
     @media(max-width:520px){body{padding:1.5rem .9rem 3rem}.summary{grid-template-columns:repeat(2,1fr)}.header-left h1{font-size:26px}.loan-balance-remaining{font-size:17px}.form-row{grid-template-columns:1fr}}
@@ -191,6 +220,7 @@
   <div class="header">
     <div class="header-left"><h1>Student Loans</h1><p id="today-label"></p></div>
     <div class="header-right">
+      <button class="sync-btn" id="sync-btn" onclick="openGistModal()" title="GitHub Sync"><span class="sync-dot"></span><span id="sync-label">Sync</span></button>
       <button class="dark-toggle" onclick="exportCSV()" style="font-size:13px;font-family:var(--sans);font-weight:600;padding:8px 14px;">⬇ Export</button>
       <button class="dark-toggle" onclick="toggleDark()" id="dark-toggle-btn">🌙</button>
     </div>
@@ -318,7 +348,288 @@ var LS=['#d8ede4','#e8f0fb','#ede9fe','#fef9e7','#fdecea','#e0f2fe'];
 var LD=['#152a20','#182030','#1e1230','#2a2010','#2a1a18','#0c2030'];
 var ICONS={'Federal Direct Loan':'🎓','Perkins Loan':'🎓','PLUS Loan':'🎓','Private Loan':'🏦','Subsidized':'🎓','Unsubsidized':'🎓','Other':'💳'};
 
-function saveBills(){localStorage.setItem('slm-bills',JSON.stringify(bills));}
+function saveBills(){
+  localStorage.setItem('slm-bills',JSON.stringify(bills));
+  // Also save to Gist if connected
+  var token=localStorage.getItem('gh-token');
+  if(token) gistSave(bills);
+}
+
+// ── GitHub Gist Sync ──────────────────────────────────────────────────────
+var GIST_FILE = 'student_loans.json';
+
+function setSyncStatus(state, label) {
+  var btn = document.getElementById('sync-btn');
+  var lbl = document.getElementById('sync-label');
+  if (!btn) return;
+  btn.className = 'sync-btn ' + state;
+  lbl.textContent = label || (state === 'connected' ? 'Synced' : state === 'syncing' ? 'Saving…' : state === 'error' ? 'Sync error' : 'Sync');
+}
+
+async function gistSave(data) {
+  var token = localStorage.getItem('gh-token');
+  if (!token) return;
+  var gistId = localStorage.getItem('gh-gist-id');
+  setSyncStatus('syncing', 'Saving…');
+  try {
+    var body = JSON.stringify({ description: 'Student Loan Manager Data', public: false, files: { [GIST_FILE]: { content: JSON.stringify(data, null, 2) } } });
+    var url = gistId ? 'https://api.github.com/gists/' + gistId : 'https://api.github.com/gists';
+    var method = gistId ? 'PATCH' : 'POST';
+    var res = await fetch(url, { method: method, headers: { Authorization: 'token ' + token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' }, body: body });
+    var result = await res.json();
+    if (result.id) { localStorage.setItem('gh-gist-id', result.id); setSyncStatus('connected', 'Synced'); }
+    else { console.error('Gist save error:', result); setSyncStatus('error', 'Save failed'); }
+  } catch(e) { console.error('Gist save error:', e); setSyncStatus('error', 'Save failed'); }
+}
+
+async function gistLoad() {
+  var token = localStorage.getItem('gh-token');
+  if (!token) return false;
+  setSyncStatus('syncing', 'Loading…');
+  try {
+    var gistId = localStorage.getItem('gh-gist-id');
+    if (!gistId) {
+      // Search for existing gist
+      var res = await fetch('https://api.github.com/gists?per_page=100', { headers: { Authorization: 'token ' + token, Accept: 'application/vnd.github+json' } });
+      var list = await res.json();
+      if (!Array.isArray(list)) { setSyncStatus('error', 'Token error'); return false; }
+      var found = list.find(function(g) { return g.files && g.files[GIST_FILE]; });
+      if (found) { localStorage.setItem('gh-gist-id', found.id); gistId = found.id; }
+      else { setSyncStatus('connected', 'Synced'); return true; } // no gist yet, that's fine
+    }
+    var res2 = await fetch('https://api.github.com/gists/' + gistId, { headers: { Authorization: 'token ' + token, Accept: 'application/vnd.github+json' } });
+    var data = await res2.json();
+    if (data.files && data.files[GIST_FILE]) {
+      var parsed = JSON.parse(data.files[GIST_FILE].content);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        bills = parsed;
+        localStorage.setItem('slm-bills', JSON.stringify(bills));
+        render();
+      }
+    }
+    setSyncStatus('connected', 'Synced');
+    return true;
+  } catch(e) { console.error('Gist load error:', e); setSyncStatus('error', 'Load failed'); return false; }
+}
+
+async function connectGist() {
+  var input = document.getElementById('gh-token-input');
+  var token = input ? input.value.trim() : '';
+  if (!token) { alert('Please enter your GitHub token.'); return; }
+  setSyncStatus('syncing', 'Connecting…');
+  try {
+    var res = await fetch('https://api.github.com/user', { headers: { Authorization: 'token ' + token } });
+    var user = await res.json();
+    if (!user.login) { alert('Invalid token — please check and try again.'); setSyncStatus('error', 'Invalid token'); return; }
+    localStorage.setItem('gh-token', token);
+    localStorage.removeItem('gh-gist-id');
+    showGistConnectedView(user.login);
+    await gistLoad();
+  } catch(e) { alert('Could not connect to GitHub. Please check your token.'); setSyncStatus('error', 'Failed'); }
+}
+
+async function forceSyncFromGist() {
+  closeGistModal();
+  await gistLoad();
+}
+
+function disconnectGist() {
+  if (!confirm('Disconnect GitHub sync? Your data stays in localStorage but will not sync to other devices.')) return;
+  localStorage.removeItem('gh-token');
+  localStorage.removeItem('gh-gist-id');
+  showGistSetupView();
+  setSyncStatus('', 'Sync');
+  closeGistModal();
+}
+
+function openGistModal() {
+  var token = localStorage.getItem('gh-token');
+  if (token) showGistConnectedView(null); else showGistSetupView();
+  document.getElementById('gist-modal').classList.remove('hidden');
+}
+function closeGistModal() { document.getElementById('gist-modal').classList.add('hidden'); }
+
+function showGistSetupView() {
+  document.getElementById('gist-setup-view').style.display = 'block';
+  document.getElementById('gist-connected-view').style.display = 'none';
+  document.getElementById('gist-modal-title').textContent = 'Connect GitHub Sync';
+}
+
+function showGistConnectedView(username) {
+  document.getElementById('gist-setup-view').style.display = 'none';
+  document.getElementById('gist-connected-view').style.display = 'block';
+  document.getElementById('gist-modal-title').textContent = 'GitHub Sync';
+  if (username) document.getElementById('gist-connected-user').textContent = '@' + username;
+  // Generate QR code after a short delay so the modal is visible first
+  setTimeout(generateQR, 100);
+}
+
+// ── Self-contained QR Code Generator (no CDN needed) ────────────────────
+// Minimal QR encoder supporting byte mode for URLs, version auto-selected
+var _QR = (function() {
+  var GF = [], LOG = [], EXP = [];
+  (function(){var x=1;for(var i=0;i<256;i++){GF[i]=x;LOG[x]=i;EXP[i]=x;x=x<128?x*2:x*2^285;}EXP[255]=EXP[0];})();
+  function gfMul(a,b){return a&&b?EXP[(LOG[a]+LOG[b])%255]:0;}
+  function gfPow(x,p){var r=1;for(var i=0;i<p;i++)r=gfMul(r,x);return r;}
+  function gfPolyMul(p,q){var r=new Array(p.length+q.length-1).fill(0);for(var i=0;i<p.length;i++)for(var j=0;j<q.length;j++)r[i+j]^=gfMul(p[i],q[j]);return r;}
+  function gfPolyDiv(msg,gen){var out=msg.slice();for(var i=0;i<msg.length;i++){var c=out[i];if(c)for(var j=1;j<gen.length;j++)out[i+j]^=gfMul(gen[j],c);}return out.slice(msg.length);}
+  function genPoly(n){var g=[1];for(var i=0;i<n;i++)g=gfPolyMul(g,[1,gfPow(2,i)]);return g;}
+
+  // Version/EC tables for byte mode, error correction level M
+  var EC_TABLE = {
+    1:{total:26,data:16,ec:10},2:{total:44,data:28,ec:16},3:{total:70,data:44,ec:26},
+    4:{total:100,data:64,ec:36},5:{total:134,data:86,ec:46},6:{total:172,data:108,ec:60},
+    7:{total:196,data:124,ec:66},8:{total:242,data:154,ec:82},9:{total:292,data:182,ec:96},
+    10:{total:346,data:216,ec:114}
+  };
+
+  function getVersion(len) {
+    for(var v=1;v<=10;v++) if(EC_TABLE[v].data-3>=len) return v; // -3 for mode+length indicators
+    return -1;
+  }
+
+  function encode(text) {
+    var bytes = [];
+    for(var i=0;i<text.length;i++) bytes.push(text.charCodeAt(i)&0xFF);
+    var version = getVersion(bytes.length);
+    if (version < 0) return null;
+    var ec = EC_TABLE[version];
+
+    // Build data bit stream
+    var bits = [];
+    function addBits(val, len) { for(var i=len-1;i>=0;i--) bits.push((val>>i)&1); }
+    addBits(4, 4); // byte mode
+    addBits(bytes.length, 8); // char count
+    for(var i=0;i<bytes.length;i++) addBits(bytes[i], 8);
+    // Terminator
+    for(var i=0;i<4&&bits.length<ec.data*8;i++) bits.push(0);
+    while(bits.length%8) bits.push(0);
+    // Padding
+    var pad=[0xEC,0x11],pi=0;
+    while(bits.length<ec.data*8){for(var j=0;j<8;j++)bits.push((pad[pi%2]>>(7-j))&1);pi++;}
+
+    // Convert bits to bytes
+    var dataBytes=[];
+    for(var i=0;i<bits.length;i+=8){var b=0;for(var j=0;j<8;j++)b=(b<<1)|bits[i+j];dataBytes.push(b);}
+
+    // EC bytes
+    var ecBytes = gfPolyDiv(dataBytes.concat(new Array(ec.ec).fill(0)), genPoly(ec.ec));
+    var allBytes = dataBytes.concat(ecBytes);
+
+    // Build matrix
+    var size = version*4+17;
+    var mat = [];
+    var used = [];
+    for(var i=0;i<size;i++){mat.push(new Array(size).fill(0));used.push(new Array(size).fill(0));}
+
+    function setMod(r,c,v){mat[r][c]=v;used[r][c]=1;}
+
+    // Finder patterns
+    function finder(r,c){
+      for(var i=-1;i<=7;i++)for(var j=-1;j<=7;j++){
+        if(r+i<0||r+i>=size||c+j<0||c+j>=size)continue;
+        var dark=(i===0&&j===0)||(i>=0&&i<=6&&(j===0||j===6))||(j>=0&&j<=6&&(i===0||i===6))||(i>=2&&i<=4&&j>=2&&j<=4);
+        setMod(r+i,c+j,dark?1:0);
+      }
+    }
+    finder(0,0);finder(0,size-7);finder(size-7,0);
+
+    // Timing patterns
+    for(var i=8;i<size-8;i++){setMod(6,i,i%2===0?1:0);setMod(i,6,i%2===0?1:0);}
+
+    // Dark module
+    setMod(size-8,8,1);
+
+    // Format info (EC level M, mask 2 = 010)
+    var fmtStr=[1,1,0,1,0,0,1,0,0,1,0,0,0,0,0]; // precomputed for M+mask2
+    var fpos=[[8,0],[8,1],[8,2],[8,3],[8,4],[8,5],[8,7],[8,8],[7,8],[5,8],[4,8],[3,8],[2,8],[1,8],[0,8]];
+    var fpos2=[[size-1,8],[size-2,8],[size-3,8],[size-4,8],[size-5,8],[size-6,8],[size-7,8],[8,size-8],[8,size-7],[8,size-6],[8,size-5],[8,size-4],[8,size-3],[8,size-2],[8,size-1]];
+    for(var i=0;i<15;i++){setMod(fpos[i][0],fpos[i][1],fmtStr[i]);setMod(fpos2[i][0],fpos2[i][1],fmtStr[i]);}
+
+    // Place data bits
+    var allBits=[];
+    for(var i=0;i<allBytes.length;i++)for(var j=7;j>=0;j--)allBits.push((allBytes[i]>>j)&1);
+    var bi=0,dir=-1,col=size-1;
+    while(col>0){
+      if(col===6)col--;
+      for(var count=0;count<size;count++){
+        var row=dir===-1?size-1-count:count;
+        for(var c2=0;c2<2;c2++){
+          var cc=col-c2;
+          if(!used[row][cc]){
+            var bit=bi<allBits.length?allBits[bi++]:0;
+            // Mask 2: (row+col)%3===0
+            if((row+cc)%3===0) bit^=1;
+            mat[row][cc]=bit;
+          }
+        }
+      }
+      dir=-dir;col-=2;
+    }
+    return {mat:mat,size:size};
+  }
+  return {encode:encode};
+})();
+
+function generateQR() {
+  var token = localStorage.getItem('gh-token');
+  if (!token) return;
+  var url = window.location.origin + window.location.pathname + '?token=' + token;
+  var wrap = document.getElementById('qr-canvas-wrap');
+  if (!wrap) return;
+
+  var result = _QR.encode(url);
+  if (!result) {
+    wrap.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:1rem;text-align:center">URL too long to encode as QR.<br>Use the token directly.</div>';
+    return;
+  }
+
+  var cellSize = Math.floor(180 / result.size);
+  var px = cellSize * result.size;
+  var canvas = document.createElement('canvas');
+  canvas.width = canvas.height = px;
+  var ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, px, px);
+  ctx.fillStyle = '#111110';
+  for (var r = 0; r < result.size; r++) {
+    for (var c = 0; c < result.size; c++) {
+      if (result.mat[r][c]) ctx.fillRect(c*cellSize, r*cellSize, cellSize, cellSize);
+    }
+  }
+  wrap.innerHTML = '';
+  wrap.appendChild(canvas);
+}
+
+// ── Auto-connect on load if token exists ──────────────────────────────────
+async function autoConnect() {
+  // Check for token in URL first (from QR code scan)
+  var urlParams = new URLSearchParams(window.location.search);
+  var urlToken = urlParams.get('token');
+  if (urlToken) {
+    localStorage.setItem('gh-token', urlToken);
+    localStorage.removeItem('gh-gist-id');
+    // Clean token from URL so it is not visible in browser bar
+    var cleanUrl = window.location.origin + window.location.pathname;
+    window.history.replaceState({}, document.title, cleanUrl);
+  }
+
+  var token = localStorage.getItem('gh-token');
+  if (!token) return;
+  try {
+    var res = await fetch('https://api.github.com/user', { headers: { Authorization: 'token ' + token } });
+    var user = await res.json();
+    if (user.login) {
+      setSyncStatus('connected', 'Synced');
+      document.getElementById('gist-connected-user').textContent = '@' + user.login;
+      await gistLoad();
+    } else {
+      localStorage.removeItem('gh-token');
+      localStorage.removeItem('gh-gist-id');
+      setSyncStatus('', 'Sync');
+    }
+  } catch(e) { setSyncStatus('error', 'Offline?'); }
+}
 
 function toggleDark(){
   var d=document.body.classList.toggle('dark');
@@ -573,6 +884,69 @@ function exportCSV(){var today=new Date().toLocaleDateString('en-US'),rows=[['Lo
   var blob=new Blob([csv],{type:'text/csv'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='student_loans.csv';a.click();URL.revokeObjectURL(url);}
 
 render();
+autoConnect();
 </script>
+
+<!-- GitHub Gist Sync Modal -->
+<div class="modal-overlay hidden" id="gist-modal">
+  <div class="modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+      <h2 style="margin-bottom:0" id="gist-modal-title">Connect GitHub Sync</h2>
+      <button onclick="closeGistModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text3);padding:4px">✕</button>
+    </div>
+
+    <!-- Setup view (shown when not connected) -->
+    <div id="gist-setup-view">
+      <div class="gist-steps">
+        <div class="gist-step">
+          <div class="gist-step-num">1</div>
+          <div class="gist-step-text">Go to <a href="https://github.com/settings/tokens" target="_blank" rel="noopener">github.com/settings/tokens</a></div>
+        </div>
+        <div class="gist-step">
+          <div class="gist-step-num">2</div>
+          <div class="gist-step-text">Click <strong>Generate new token (classic)</strong></div>
+        </div>
+        <div class="gist-step">
+          <div class="gist-step-num">3</div>
+          <div class="gist-step-text">Set expiration to <strong>No expiration</strong> and check only the <strong>gist</strong> scope</div>
+        </div>
+        <div class="gist-step">
+          <div class="gist-step-num">4</div>
+          <div class="gist-step-text">Paste your token below — stored only on this device, never shared</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Personal Access Token</label>
+        <div class="token-row">
+          <input id="gh-token-input" type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off"/>
+          <button class="btn-primary" style="flex:0 0 auto;padding:.6rem 1.1rem" onclick="connectGist()">Connect</button>
+        </div>
+      </div>
+      <p style="font-size:11px;color:var(--text4);margin-top:.75rem;font-family:var(--mono)">Your token is saved only in your browser's localStorage. It is never sent anywhere except the GitHub API.</p>
+    </div>
+
+    <!-- Connected view (shown when connected) -->
+    <div id="gist-connected-view" style="display:none">
+      <div style="display:flex;align-items:center;gap:12px;padding:1rem;background:var(--accent-soft);border-radius:12px;margin-bottom:1.25rem">
+        <div style="font-size:28px">✅</div>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--accent)">Connected to GitHub</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px;font-family:var(--mono)" id="gist-connected-user">—</div>
+        </div>
+      </div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:1rem;line-height:1.5">Your loans are automatically saved to a private GitHub Gist called <strong>student_loans.json</strong> every time you make a change.</p>
+      <button class="btn-primary" onclick="forceSyncFromGist()" style="margin-bottom:.75rem;width:100%">↓ Pull latest from GitHub</button>
+      <button class="disconnect-btn" onclick="disconnectGist()">Disconnect GitHub sync</button>
+      <div class="qr-section">
+        <div class="qr-title">📱 Add to another device</div>
+        <div class="qr-wrap">
+          <div class="qr-canvas-wrap" id="qr-canvas-wrap"></div>
+          <div class="qr-hint">Scan this QR code on your phone or another device.<br><strong>Keep it private</strong> — it contains your access token.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
