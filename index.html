@@ -213,6 +213,33 @@
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
     @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
     @media(max-width:520px){body{padding:1.5rem .9rem 3rem}.summary{grid-template-columns:repeat(2,1fr)}.header-left h1{font-size:26px}.loan-balance-remaining{font-size:17px}.form-row{grid-template-columns:1fr}}
+
+    /* ── Quick Payment Modal ── */
+    #quick-pay-modal .modal{max-width:420px;padding:0;overflow:hidden;border-radius:22px}
+    .qp-header{padding:1.5rem 1.75rem 1.25rem;position:relative}
+    .qp-header-eyebrow{font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:4px;font-family:var(--mono)}
+    .qp-header-title{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.4px}
+    .qp-loan-context{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.12);border-radius:12px;padding:.75rem 1rem;margin-top:1rem}
+    .qp-context-item{flex:1}
+    .qp-context-label{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.5);margin-bottom:2px}
+    .qp-context-value{font-family:var(--mono);font-size:15px;font-weight:500;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .qp-context-divider{width:1px;height:28px;background:rgba(255,255,255,.2);flex-shrink:0}
+    .qp-body{padding:1.5rem 1.75rem 1.75rem}
+    .qp-field-label{display:block;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
+    .qp-field{margin-bottom:1rem}
+    .qp-amount-wrap{position:relative}
+    .qp-amount-prefix{position:absolute;left:.85rem;top:50%;transform:translateY(-50%);font-size:18px;font-weight:700;color:var(--text3);font-family:var(--mono);pointer-events:none}
+    .qp-amount-input{width:100%;padding:.75rem .85rem .75rem 1.75rem;border:1.5px solid var(--border);border-radius:10px;font-size:22px;font-weight:700;font-family:var(--mono);outline:none;background:var(--input-bg);color:var(--text);transition:border-color .15s,box-shadow .15s;letter-spacing:-.5px}
+    .qp-amount-input:focus{border-color:var(--qp-color,var(--accent));box-shadow:0 0 0 3px rgba(45,106,79,.1)}
+    .qp-new-balance{margin-top:.75rem;padding:.75rem 1rem;border-radius:10px;background:var(--accent-soft);border:1.5px solid rgba(45,106,79,.2);display:flex;align-items:baseline;justify-content:space-between}
+    .qp-new-balance-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--accent)}
+    .qp-new-balance-value{font-family:var(--mono);font-size:18px;font-weight:500;color:var(--accent);letter-spacing:-.5px}
+    .qp-divider{height:1px;background:var(--border);margin:1.25rem 0}
+    .qp-date-row{display:flex;align-items:center;gap:10px}
+    .qp-date-row input{flex:1}
+    .qp-actions{display:flex;gap:10px;margin-top:1.5rem}
+    .qp-confirm-btn{flex:1;padding:.7rem 1rem;border:none;border-radius:11px;font-size:14px;font-weight:700;font-family:var(--sans);cursor:pointer;transition:opacity .15s;color:#fff;background:var(--qp-color,var(--accent))}
+    .qp-confirm-btn:hover{opacity:.85}
   </style>
 </head>
 <body>
@@ -590,15 +617,15 @@ function render(){
         (bill.loan_type?'<span class="badge '+tbc+'">'+bill.loan_type+'</span>':'')+
         (isArch?'<span class="badge badge-ok">Paid off 🎓</span>':'<span class="badge '+st.cls+'">'+st.label+'</span>')+
       '</div><div class="bill-meta">'+(isArch?'Paid off':'Due '+dl2)+
-        (bill.payment_url&&!isArch?' &nbsp;·&nbsp; <a href="'+bill.payment_url+'" target="_blank" rel="noopener" class="pay-link" onclick="event.stopPropagation()">Make a payment →</a>':'')+
+        (!isArch?' &nbsp;·&nbsp; <a href="#" class="pay-link" onclick="event.preventDefault();event.stopPropagation();openQuickPay('+bill.id+')">Make a payment →</a>':'')+
       '</div></div>'+
       '<div class="loan-balance-block"><div class="loan-balance-remaining">$'+fmt(rem)+'</div><div class="loan-balance-label">remaining</div><div class="loan-monthly">$'+fmt(bill.amount)+'/mo</div></div>'+
       '<div class="card-right">'+
         '<button class="expand-btn '+(isOpen?'open':'')+'" id="expand-btn-'+bill.id+'" onclick="togglePanel('+bill.id+')">'+(isOpen?'▲':'▼')+'</button>'+
         '<div class="menu-wrap"><button class="menu-trigger" onclick="toggleMenu('+bill.id+',event)">⋯</button>'+
           '<div class="menu-dropdown" id="menu-'+bill.id+'" style="display:none;">'+
-            (isArch?'<button class="menu-item" onclick="unarchiveLoan('+bill.id+');closeMenu('+bill.id+')">↩️ &nbsp;Restore loan</button>':'<button class="menu-item" onclick="markPaid('+bill.id+');closeMenu('+bill.id+')">✅ &nbsp;Mark as paid</button>')+
-            (bill.payment_url&&!isArch?'<a class="menu-item" href="'+bill.payment_url+'" target="_blank" rel="noopener" onclick="closeMenu('+bill.id+')" style="text-decoration:none">🌐 &nbsp;Make a payment</a>':'')+
+            (isArch?'<button class="menu-item" onclick="unarchiveLoan('+bill.id+');closeMenu('+bill.id+')">↩️ &nbsp;Restore loan</button>':'')+
+
             '<button class="menu-item" onclick="openLoanModal('+bill.id+');closeMenu('+bill.id+')">✏️ &nbsp;Edit loan</button>'+
             '<div class="menu-divider"></div>'+
             '<button class="menu-item danger" onclick="deleteLoan('+bill.id+');closeMenu('+bill.id+')">🗑️ &nbsp;Delete loan</button>'+
@@ -795,6 +822,65 @@ function exportCSV(){var today=new Date().toLocaleDateString('en-US'),rows=[['Lo
 
 render();
 autoConnect();
+
+var activeQuickPayId = null;
+function openQuickPay(lid) {
+  activeQuickPayId = lid;
+  var b = bills.find(function(x){return x.id===lid;});
+  if(!b) return;
+  var isDark = document.body.classList.contains('dark');
+  var ci = bills.filter(function(x){return !x.archived;}).indexOf(b);
+  var lc = LC[ci%LC.length];
+  // Style header with loan color
+  var hdr = document.getElementById('qp-header');
+  hdr.style.background = 'linear-gradient(135deg,'+lc+' 0%, #1f5c3c 100%)';
+  document.getElementById('qp-confirm-btn').style.background = lc;
+  document.querySelector('#quick-pay-modal .qp-amount-input').style.setProperty('--qp-color', lc);
+  // Populate context
+  var name = b.name;
+  document.getElementById('qp-title').textContent = 'Pay ' + (name.length > 20 ? name.slice(0,19)+'…' : name);
+  document.getElementById('qp-loan-name').textContent = name.length > 14 ? name.slice(0,13)+'…' : name;
+  document.getElementById('qp-current-balance').textContent = '$' + fmt(b.remaining_balance != null ? b.remaining_balance : b.amount);
+  document.getElementById('qp-monthly').textContent = '$' + fmt(b.amount) + '/mo';
+  // Pre-fill with monthly payment amount and today's date
+  document.getElementById('qp-amount').value = b.amount || '';
+  document.getElementById('qp-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('qp-balance-preview').style.display = 'none';
+  document.getElementById('quick-pay-modal').classList.remove('hidden');
+  updateQPPreview();
+  setTimeout(function(){ document.getElementById('qp-amount').select(); }, 50);
+}
+function closeQuickPay() {
+  document.getElementById('quick-pay-modal').classList.add('hidden');
+  activeQuickPayId = null;
+}
+function updateQPPreview() {
+  var b = bills.find(function(x){return x.id===activeQuickPayId;}); if(!b) return;
+  var amt = parseFloat(document.getElementById('qp-amount').value);
+  var preview = document.getElementById('qp-balance-preview');
+  var balVal  = document.getElementById('qp-balance-val');
+  if(isNaN(amt)||amt<=0){preview.style.display='none';return;}
+  var start = b.starting_balance||0;
+  var soFar = (b.loan_history||[]).reduce(function(s,e){return s+(e.principal_paid||0);},0);
+  var newBal = Math.max(0, start - soFar - amt);
+  balVal.textContent = '$' + fmt(newBal);
+  preview.style.display = 'flex';
+}
+function saveQuickPayment() {
+  var b = bills.find(function(x){return x.id===activeQuickPayId;}); if(!b) return;
+  var amt = parseFloat(document.getElementById('qp-amount').value);
+  var rd  = document.getElementById('qp-date').value;
+  if(!rd||isNaN(amt)||amt<=0){alert('Please enter a valid payment amount and date.');return;}
+  var po = new Date(rd+'T00:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  var entry = {paid_on:po,paid_on_raw:rd,amount_paid:amt,principal_paid:amt,interest_paid:0,remaining_balance:0};
+  if(!b.loan_history) b.loan_history=[];
+  b.loan_history.push(entry);
+  recomputeBalances(b);
+  var nb = b.remaining_balance;
+  saveBills(); render(); closeQuickPay();
+  if(!nb) setTimeout(function(){celebrate(b.name,b.id);},300);
+}
+
 </script>
 
 <!-- GitHub Gist Sync Modal -->
@@ -853,6 +939,55 @@ autoConnect();
           <div class="qr-canvas-wrap" id="qr-canvas-wrap"></div>
           <div class="qr-hint">Scan this QR code on your phone or another device.<br><strong>Keep it private</strong> — it contains your access token.</div>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Quick Payment Modal -->
+<div class="modal-overlay hidden" id="quick-pay-modal">
+  <div class="modal">
+    <div class="qp-header" id="qp-header">
+      <div class="qp-header-eyebrow">Confirm payment</div>
+      <div class="qp-header-title" id="qp-title">Make a payment</div>
+      <div class="qp-loan-context">
+        <div class="qp-context-item">
+          <div class="qp-context-label">Loan</div>
+          <div class="qp-context-value" id="qp-loan-name">—</div>
+        </div>
+        <div class="qp-context-divider"></div>
+        <div class="qp-context-item">
+          <div class="qp-context-label">Current balance</div>
+          <div class="qp-context-value" id="qp-current-balance">—</div>
+        </div>
+        <div class="qp-context-divider"></div>
+        <div class="qp-context-item">
+          <div class="qp-context-label">Monthly payment</div>
+          <div class="qp-context-value" id="qp-monthly">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="qp-body">
+      <div class="qp-field">
+        <label class="qp-field-label">Payment amount ($)</label>
+        <div class="qp-amount-wrap">
+          <span class="qp-amount-prefix">$</span>
+          <input class="qp-amount-input" id="qp-amount" type="number" placeholder="0.00" step="0.01" oninput="updateQPPreview()"/>
+        </div>
+        <div class="qp-new-balance" id="qp-balance-preview" style="display:none">
+          <span class="qp-new-balance-label">New balance</span>
+          <span class="qp-new-balance-value" id="qp-balance-val">—</span>
+        </div>
+      </div>
+      <div class="qp-divider"></div>
+      <div class="qp-field">
+        <label class="qp-field-label">Date paid</label>
+        <input id="qp-date" type="date"/>
+      </div>
+      <div class="qp-actions">
+        <button class="btn-secondary" onclick="closeQuickPay()">Cancel</button>
+        <button class="qp-confirm-btn" id="qp-confirm-btn" onclick="saveQuickPayment()">Confirm payment</button>
       </div>
     </div>
   </div>
