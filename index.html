@@ -620,7 +620,7 @@ function render(){
         (bill.loan_type?'<span class="badge '+tbc+'">'+bill.loan_type+'</span>':'')+
         (isArch?'<span class="badge badge-ok">Paid off 🎓</span>':'<span class="badge '+st.cls+'">'+st.label+'</span>')+
       '</div><div class="bill-meta">'+(isArch?'Paid off':'Due '+dl2)+
-        (bill.payment_url&&!isArch?' &nbsp;·&nbsp; <a href="#" class="pay-link" onclick="event.preventDefault();event.stopPropagation();openQuickPay('+bill.id+')">Make a payment →</a>':'')+
+        (bill.payment_url&&!isArch?' &nbsp;·&nbsp; <a href="'+bill.payment_url+'" target="_blank" rel="noopener" class="pay-link qp-trigger" data-lid="'+bill.id+'">Make a payment →</a>':'')+
       '</div></div>'+
       '<div class="loan-balance-block"><div class="loan-balance-remaining">$'+fmt(rem)+'</div><div class="loan-balance-label">remaining</div><div class="loan-monthly">$'+fmt(bill.amount)+'/mo</div></div>'+
       '<div class="card-right">'+
@@ -752,6 +752,23 @@ function toggleMenu(id,e){e.stopPropagation();var m=document.getElementById('men
 function closeMenu(id){var m=document.getElementById('menu-'+id);if(m){m.style.display='none';if(m.previousElementSibling)m.previousElementSibling.classList.remove('active');}}
 function closeAllMenus(){document.querySelectorAll('.menu-dropdown').forEach(function(m){m.style.display='none';});document.querySelectorAll('.menu-trigger').forEach(function(t){t.classList.remove('active');});}
 document.addEventListener('click',closeAllMenus);
+
+// Quick pay trigger via event delegation — opens external site AND shows popup
+document.addEventListener('click', function(e) {
+  var trigger = e.target.closest('.qp-trigger');
+  if (trigger) {
+    e.stopPropagation();
+    // Let the link open the external URL naturally, then show the popup
+    openQuickPay(parseInt(trigger.dataset.lid));
+  }
+});
+
+// Close quick pay modal when clicking overlay
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('quick-pay-modal').addEventListener('click', function(e) {
+    if (e.target === document.getElementById('quick-pay-modal')) closeQuickPay();
+  });
+});
 function togglePanel(id){openPanels[id]=!openPanels[id];var p=document.getElementById('panel-'+id),b=document.getElementById('expand-btn-'+id);if(p)p.classList.toggle('open',openPanels[id]);if(b){b.classList.toggle('open',openPanels[id]);b.textContent=openPanels[id]?'▲':'▼';}}
 function openLoanModal(id){editingLoanId=id||null;var b=id?bills.find(function(x){return x.id===id;}):null;var rem=b?(b.remaining_balance!==undefined?b.remaining_balance:b.amount):'';var start=b?(b.starting_balance||rem):'';
   document.getElementById('f-name').value=b?b.name:'';document.getElementById('f-type').value=b?(b.loan_type||'Federal'):'Federal';document.getElementById('f-amount').value=b?b.amount:'';document.getElementById('f-rate').value=b?(b.interest_rate!=null?b.interest_rate:''):'';document.getElementById('f-start-balance').value=start;document.getElementById('f-day').value=b?b.due_date:'';document.getElementById('f-url').value=b?(b.payment_url||''):'';
@@ -960,7 +977,7 @@ function saveQuickPayment() {
 <div class="modal-overlay hidden" id="quick-pay-modal">
   <div class="modal">
     <div class="qp-header" id="qp-header">
-      <div class="qp-header-eyebrow">Confirm payment</div>
+      <div class="qp-header-eyebrow">Did you make a payment?</div>
       <div class="qp-header-title" id="qp-title">Make a payment</div>
 
     </div>
@@ -985,8 +1002,8 @@ function saveQuickPayment() {
         <span id="qp-site-label">Go to payment site →</span>
       </a>
       <div class="qp-actions">
-        <button class="btn-secondary" onclick="closeQuickPay()">Cancel</button>
-        <button class="qp-confirm-btn" id="qp-confirm-btn" onclick="saveQuickPayment()">Confirm payment</button>
+        <button class="btn-secondary" onclick="closeQuickPay()">No, cancel</button>
+        <button class="qp-confirm-btn" id="qp-confirm-btn" onclick="saveQuickPayment()">Yes, log my payment</button>
       </div>
     </div>
   </div>
