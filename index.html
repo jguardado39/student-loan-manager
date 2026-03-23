@@ -839,55 +839,70 @@
   // The app is already visible with sample data. Firebase just upgrades it.
   onAuthStateChanged(auth, (user) => {
     if (user) {
-      // ── Signed in: swap sample data for real user data ──
-      window._isGuestMode = false;
-      setSignedInUI(user);
-      setSyncStatus("syncing");
+      try {
+        // ── Signed in: swap sample data for real user data ──
+        window._isGuestMode = false;
+        setSignedInUI(user);
+        setSyncStatus("syncing");
 
-      // Try local cache first for instant swap
-      const cached = localStorage.getItem("slm-bills-cache");
-      if (cached) {
-        try {
-          window.bills = JSON.parse(cached);
-          window._appReady = true;
-          window.render();
-        } catch(e) {}
-      }
-
-      // Then sync live from Firestore
-      unsubscribeSnapshot = onSnapshot(
-        doc(db, "users", user.uid),
-        (snap) => {
-          if (snap.exists() && snap.data().bills) {
-            window.bills = snap.data().bills;
-            localStorage.setItem("slm-bills-cache", JSON.stringify(window.bills));
-          } else if (!cached) {
-            window.bills = []; // brand new user
-          }
-          window._appReady = true;
-          window.render();
-          setSyncStatus("synced");
-        },
-        (error) => {
-          console.error("Snapshot error:", error);
-          setSyncStatus("error");
-          if (!window._appReady) {
-            window.bills = cached ? JSON.parse(cached) : [];
+        // Try local cache first for an instant swap while Firestore loads
+        const cached = localStorage.getItem("slm-bills-cache");
+        if (cached) {
+          try {
+            window.bills     = JSON.parse(cached);
             window._appReady = true;
             window.render();
-          }
+          } catch(e) { console.warn("Cache parse failed:", e); }
+        } else {
+          // No cache — keep showing sample data until Firestore responds
+          window._appReady = true;
+          window.render();
         }
-      );
+
+        // Live Firestore sync
+        unsubscribeSnapshot = onSnapshot(
+          doc(db, "users", user.uid),
+          (snap) => {
+            try {
+              if (snap.exists() && snap.data().bills && snap.data().bills.length > 0) {
+                window.bills = snap.data().bills;
+                localStorage.setItem("slm-bills-cache", JSON.stringify(window.bills));
+              } else if (!cached) {
+                // Brand new user with no data yet — start with empty array
+                window.bills = [];
+              }
+              window._appReady = true;
+              window.render();
+              setSyncStatus("synced");
+            } catch(e) {
+              console.error("Snapshot render error:", e);
+              setSyncStatus("error");
+            }
+          },
+          (error) => {
+            console.error("Snapshot error:", error);
+            setSyncStatus("error");
+            // Keep whatever is currently shown — don't wipe it
+            window._appReady = true;
+          }
+        );
+      } catch(e) {
+        console.error("Auth sign-in handler error:", e);
+      }
     } else {
-      // ── Signed out: show sample data + sign-in banner ──
-      window._isGuestMode = true;
-      window._appReady    = false;
-      if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
-      localStorage.removeItem("slm-bills-cache");
-      setSignedOutUI();
-      window.bills = JSON.parse(JSON.stringify(SAMPLE_BILLS));
-      window._appReady = true;
-      window.render();
+      // ── Signed out: restore sample data + show guest UI ──
+      try {
+        window._isGuestMode = true;
+        window._appReady    = false;
+        if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
+        localStorage.removeItem("slm-bills-cache");
+        setSignedOutUI();
+        window.bills     = JSON.parse(JSON.stringify(SAMPLE_BILLS));
+        window._appReady = true;
+        window.render();
+      } catch(e) {
+        console.error("Auth sign-out handler error:", e);
+      }
     }
   });
 
