@@ -147,9 +147,9 @@
     .payoff-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1rem 1.25rem;box-shadow:var(--shadow)}
     .payoff-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
     .payoff-card-name{font-size:14px;font-weight:700}
-    .payoff-card-date{font-size:13px;color:var(--accent);font-weight:600;font-family:var(--mono)}.payoff-card-date.unknown{color:var(--text4);font-weight:300}
+    .payoff-card-date{font-size:13px;color:var(--payoff-color,var(--accent));font-weight:600;font-family:var(--mono)}.payoff-card-date.unknown{color:var(--text4);font-weight:300}
     .payoff-track{height:5px;background:var(--surface2);border-radius:999px;overflow:hidden}
-    .payoff-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent-soft),var(--accent))}
+    .payoff-fill{height:100%;border-radius:999px;background:var(--payoff-color,var(--accent));transition:width .8s cubic-bezier(.4,0,.2,1)}
     .payoff-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--text4);margin-top:6px;font-family:var(--mono);font-weight:300}
     .chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.4rem;box-shadow:var(--shadow);overflow:hidden}
     .chart-subtabs{display:flex;gap:3px;background:var(--tab-bg);border-radius:10px;padding:3px;margin-bottom:1.25rem}
@@ -695,13 +695,15 @@ function renderAnalytics(){
     grid.appendChild(c);
   });
   var pl=document.getElementById('payoff-list');pl.innerHTML='';
-  bills.forEach(function(b){
+  bills.forEach(function(b,bi){
     var rem=b.remaining_balance||0,start=b.starting_balance||b.remaining_balance||0;
     var pct=start>0?Math.min(100,Math.max(0,Math.round((1-rem/start)*100))):0;
     var payoff=estimatePayoff(b),ds=payoff?payoff.toLocaleDateString('en-US',{month:'long',year:'numeric'}):'Need more payments';
+    var loanColor=LC[bi%LC.length];
     var c=document.createElement('div');c.className='payoff-card';
-    c.innerHTML='<div class="payoff-card-header"><div class="payoff-card-name">'+b.name+'</div><div class="payoff-card-date '+(payoff?'':'unknown')+'">'+(payoff?'🎯 '+ds:ds)+'</div></div>'+
-      '<div class="payoff-track"><div class="payoff-fill" style="width:'+pct+'%"></div></div>'+
+    c.style.setProperty('--payoff-color',loanColor);
+    c.innerHTML='<div class="payoff-card-header"><div class="payoff-card-name">'+b.name+'</div><div class="payoff-card-date '+(payoff?'':'unknown')+'" style="color:'+loanColor+'">'+(payoff?'🎯 '+ds:ds)+'</div></div>'+
+      '<div class="payoff-track"><div class="payoff-fill" style="width:'+pct+'%;background:'+loanColor+'"></div></div>'+
       '<div class="payoff-meta"><span>$'+fmt(rem)+' remaining</span><span>'+pct+'% paid off</span></div>';
     pl.appendChild(c);
   });
