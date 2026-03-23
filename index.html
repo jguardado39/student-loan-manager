@@ -202,6 +202,14 @@
     .token-row input{flex:1;font-family:var(--mono);font-size:13px}
     .disconnect-btn{width:100%;margin-top:.75rem;padding:.6rem;background:none;border:1.5px solid var(--danger-soft);border-radius:10px;color:var(--danger);font-size:13px;font-family:var(--sans);font-weight:600;cursor:pointer;transition:all .15s}
     .disconnect-btn:hover{background:var(--danger-soft)}
+
+    /* ── QR Code ── */
+    .qr-section{margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border2)}
+    .qr-title{font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.75rem}
+    .qr-wrap{display:flex;flex-direction:column;align-items:center;gap:.75rem}
+    .qr-canvas-wrap{background:#fff;border-radius:12px;padding:12px;border:1px solid var(--border);display:inline-block}
+    .qr-hint{font-size:12px;color:var(--text3);text-align:center;font-family:var(--mono);line-height:1.5}
+    .qr-hint strong{color:var(--danger)}
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
     @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
     @media(max-width:520px){body{padding:1.5rem .9rem 3rem}.summary{grid-template-columns:repeat(2,1fr)}.header-left h1{font-size:26px}.loan-balance-remaining{font-size:17px}.form-row{grid-template-columns:1fr}}
@@ -452,10 +460,52 @@ function showGistConnectedView(username) {
   document.getElementById('gist-connected-view').style.display = 'block';
   document.getElementById('gist-modal-title').textContent = 'GitHub Sync';
   if (username) document.getElementById('gist-connected-user').textContent = '@' + username;
+  // Generate QR code for the setup URL
+  loadQRLib(function() {
+    var token = localStorage.getItem('gh-token');
+    if (!token) return;
+    var url = window.location.origin + window.location.pathname + '?token=' + token;
+    var canvas = document.getElementById('qr-canvas');
+    if (!canvas) return;
+    QRCode.toCanvas(canvas, url, { width: 180, margin: 1, color: { dark: '#111110', light: '#ffffff' } }, function(err) {
+      if (err) console.error('QR error:', err);
+    });
+  });
+}
+
+// ── QR Library lazy loader ────────────────────────────────────────────────
+var _qrLoaded = false, _qrLoading = false, _qrCbs = [];
+function loadQRLib(cb) {
+  if (_qrLoaded) { if (cb) cb(); return; }
+  if (cb) _qrCbs.push(cb);
+  if (_qrLoading) return;
+  _qrLoading = true;
+  var s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+  s.onload = function() { _qrLoaded = true; _qrCbs.forEach(function(f) { f(); }); _qrCbs = []; };
+  s.onerror = function() {
+    // Fallback to alternative CDN
+    var s2 = document.createElement('script');
+    s2.src = 'https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js';
+    s2.onload = function() { _qrLoaded = true; _qrCbs.forEach(function(f) { f(); }); _qrCbs = []; };
+    document.head.appendChild(s2);
+  };
+  document.head.appendChild(s);
 }
 
 // ── Auto-connect on load if token exists ──────────────────────────────────
 async function autoConnect() {
+  // Check for token in URL first (from QR code scan)
+  var urlParams = new URLSearchParams(window.location.search);
+  var urlToken = urlParams.get('token');
+  if (urlToken) {
+    localStorage.setItem('gh-token', urlToken);
+    localStorage.removeItem('gh-gist-id');
+    // Clean token from URL so it is not visible in browser bar
+    var cleanUrl = window.location.origin + window.location.pathname;
+    window.history.replaceState({}, document.title, cleanUrl);
+  }
+
   var token = localStorage.getItem('gh-token');
   if (!token) return;
   try {
@@ -468,6 +518,7 @@ async function autoConnect() {
     } else {
       localStorage.removeItem('gh-token');
       localStorage.removeItem('gh-gist-id');
+      setSyncStatus('', 'Sync');
     }
   } catch(e) { setSyncStatus('error', 'Offline?'); }
 }
@@ -778,6 +829,13 @@ autoConnect();
       <p style="font-size:13px;color:var(--text2);margin-bottom:1rem;line-height:1.5">Your loans are automatically saved to a private GitHub Gist called <strong>student_loans.json</strong> every time you make a change.</p>
       <button class="btn-primary" onclick="forceSyncFromGist()" style="margin-bottom:.75rem;width:100%">↓ Pull latest from GitHub</button>
       <button class="disconnect-btn" onclick="disconnectGist()">Disconnect GitHub sync</button>
+      <div class="qr-section">
+        <div class="qr-title">📱 Add to another device</div>
+        <div class="qr-wrap">
+          <div class="qr-canvas-wrap"><canvas id="qr-canvas"></canvas></div>
+          <div class="qr-hint">Scan this QR code on your phone or another device.<br><strong>Keep it private</strong> — it contains your access token.</div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
