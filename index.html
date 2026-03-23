@@ -464,62 +464,141 @@ function showGistConnectedView(username) {
   setTimeout(generateQR, 100);
 }
 
+// ── Self-contained QR Code Generator (no CDN needed) ────────────────────
+// Minimal QR encoder supporting byte mode for URLs, version auto-selected
+var _QR = (function() {
+  var GF = [], LOG = [], EXP = [];
+  (function(){var x=1;for(var i=0;i<256;i++){GF[i]=x;LOG[x]=i;EXP[i]=x;x=x<128?x*2:x*2^285;}EXP[255]=EXP[0];})();
+  function gfMul(a,b){return a&&b?EXP[(LOG[a]+LOG[b])%255]:0;}
+  function gfPow(x,p){var r=1;for(var i=0;i<p;i++)r=gfMul(r,x);return r;}
+  function gfPolyMul(p,q){var r=new Array(p.length+q.length-1).fill(0);for(var i=0;i<p.length;i++)for(var j=0;j<q.length;j++)r[i+j]^=gfMul(p[i],q[j]);return r;}
+  function gfPolyDiv(msg,gen){var out=msg.slice();for(var i=0;i<msg.length;i++){var c=out[i];if(c)for(var j=1;j<gen.length;j++)out[i+j]^=gfMul(gen[j],c);}return out.slice(msg.length);}
+  function genPoly(n){var g=[1];for(var i=0;i<n;i++)g=gfPolyMul(g,[1,gfPow(2,i)]);return g;}
+
+  // Version/EC tables for byte mode, error correction level M
+  var EC_TABLE = {
+    1:{total:26,data:16,ec:10},2:{total:44,data:28,ec:16},3:{total:70,data:44,ec:26},
+    4:{total:100,data:64,ec:36},5:{total:134,data:86,ec:46},6:{total:172,data:108,ec:60},
+    7:{total:196,data:124,ec:66},8:{total:242,data:154,ec:82},9:{total:292,data:182,ec:96},
+    10:{total:346,data:216,ec:114}
+  };
+
+  function getVersion(len) {
+    for(var v=1;v<=10;v++) if(EC_TABLE[v].data-3>=len) return v; // -3 for mode+length indicators
+    return -1;
+  }
+
+  function encode(text) {
+    var bytes = [];
+    for(var i=0;i<text.length;i++) bytes.push(text.charCodeAt(i)&0xFF);
+    var version = getVersion(bytes.length);
+    if (version < 0) return null;
+    var ec = EC_TABLE[version];
+
+    // Build data bit stream
+    var bits = [];
+    function addBits(val, len) { for(var i=len-1;i>=0;i--) bits.push((val>>i)&1); }
+    addBits(4, 4); // byte mode
+    addBits(bytes.length, 8); // char count
+    for(var i=0;i<bytes.length;i++) addBits(bytes[i], 8);
+    // Terminator
+    for(var i=0;i<4&&bits.length<ec.data*8;i++) bits.push(0);
+    while(bits.length%8) bits.push(0);
+    // Padding
+    var pad=[0xEC,0x11],pi=0;
+    while(bits.length<ec.data*8){for(var j=0;j<8;j++)bits.push((pad[pi%2]>>(7-j))&1);pi++;}
+
+    // Convert bits to bytes
+    var dataBytes=[];
+    for(var i=0;i<bits.length;i+=8){var b=0;for(var j=0;j<8;j++)b=(b<<1)|bits[i+j];dataBytes.push(b);}
+
+    // EC bytes
+    var ecBytes = gfPolyDiv(dataBytes.concat(new Array(ec.ec).fill(0)), genPoly(ec.ec));
+    var allBytes = dataBytes.concat(ecBytes);
+
+    // Build matrix
+    var size = version*4+17;
+    var mat = [];
+    var used = [];
+    for(var i=0;i<size;i++){mat.push(new Array(size).fill(0));used.push(new Array(size).fill(0));}
+
+    function setMod(r,c,v){mat[r][c]=v;used[r][c]=1;}
+
+    // Finder patterns
+    function finder(r,c){
+      for(var i=-1;i<=7;i++)for(var j=-1;j<=7;j++){
+        if(r+i<0||r+i>=size||c+j<0||c+j>=size)continue;
+        var dark=(i===0&&j===0)||(i>=0&&i<=6&&(j===0||j===6))||(j>=0&&j<=6&&(i===0||i===6))||(i>=2&&i<=4&&j>=2&&j<=4);
+        setMod(r+i,c+j,dark?1:0);
+      }
+    }
+    finder(0,0);finder(0,size-7);finder(size-7,0);
+
+    // Timing patterns
+    for(var i=8;i<size-8;i++){setMod(6,i,i%2===0?1:0);setMod(i,6,i%2===0?1:0);}
+
+    // Dark module
+    setMod(size-8,8,1);
+
+    // Format info (EC level M, mask 2 = 010)
+    var fmtStr=[1,1,0,1,0,0,1,0,0,1,0,0,0,0,0]; // precomputed for M+mask2
+    var fpos=[[8,0],[8,1],[8,2],[8,3],[8,4],[8,5],[8,7],[8,8],[7,8],[5,8],[4,8],[3,8],[2,8],[1,8],[0,8]];
+    var fpos2=[[size-1,8],[size-2,8],[size-3,8],[size-4,8],[size-5,8],[size-6,8],[size-7,8],[8,size-8],[8,size-7],[8,size-6],[8,size-5],[8,size-4],[8,size-3],[8,size-2],[8,size-1]];
+    for(var i=0;i<15;i++){setMod(fpos[i][0],fpos[i][1],fmtStr[i]);setMod(fpos2[i][0],fpos2[i][1],fmtStr[i]);}
+
+    // Place data bits
+    var allBits=[];
+    for(var i=0;i<allBytes.length;i++)for(var j=7;j>=0;j--)allBits.push((allBytes[i]>>j)&1);
+    var bi=0,dir=-1,col=size-1;
+    while(col>0){
+      if(col===6)col--;
+      for(var count=0;count<size;count++){
+        var row=dir===-1?size-1-count:count;
+        for(var c2=0;c2<2;c2++){
+          var cc=col-c2;
+          if(!used[row][cc]){
+            var bit=bi<allBits.length?allBits[bi++]:0;
+            // Mask 2: (row+col)%3===0
+            if((row+cc)%3===0) bit^=1;
+            mat[row][cc]=bit;
+          }
+        }
+      }
+      dir=-dir;col-=2;
+    }
+    return {mat:mat,size:size};
+  }
+  return {encode:encode};
+})();
+
 function generateQR() {
   var token = localStorage.getItem('gh-token');
   if (!token) return;
   var url = window.location.origin + window.location.pathname + '?token=' + token;
   var wrap = document.getElementById('qr-canvas-wrap');
   if (!wrap) return;
-  // Build QR using qrcode-generator — no external lib needed, inline below
-  try {
-    var qr = qrcode(0, 'M');
-    qr.addData(url);
-    qr.make();
-    // Render as canvas manually for crisp display
-    var size = 180;
-    var modules = qr.getModuleCount();
-    var cellSize = Math.floor(size / modules);
-    var canvas = document.createElement('canvas');
-    canvas.width = canvas.height = cellSize * modules;
-    var ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#111110';
-    for (var row = 0; row < modules; row++) {
-      for (var col = 0; col < modules; col++) {
-        if (qr.isDark(row, col)) {
-          ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
-        }
-      }
-    }
-    wrap.innerHTML = '';
-    wrap.appendChild(canvas);
-  } catch(e) {
-    console.error('QR generation error:', e);
-    wrap.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:1rem;text-align:center">QR library loading...<br>Try closing and reopening the modal.</div>';
-    // Load qrcode-generator from CDN as fallback
-    if (!window._qrLibLoaded) loadQRLib(function() { generateQR(); });
-  }
-}
 
-// ── QR Library lazy loader (qrcode-generator) ─────────────────────────────
-var _qrLoaded = false, _qrLoading = false, _qrCbs = [];
-function loadQRLib(cb) {
-  if (_qrLoaded) { if (cb) cb(); return; }
-  if (cb) _qrCbs.push(cb);
-  if (_qrLoading) return;
-  _qrLoading = true;
-  var s = document.createElement('script');
-  // qrcode-generator is reliable and has a stable cdnjs URL
-  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
-  s.onload = function() { window._qrLibLoaded = true; _qrLoaded = true; _qrCbs.forEach(function(f){f();}); _qrCbs = []; };
-  s.onerror = function() {
-    var s2 = document.createElement('script');
-    s2.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
-    s2.onload = function() { window._qrLibLoaded = true; _qrLoaded = true; _qrCbs.forEach(function(f){f();}); _qrCbs = []; };
-    document.head.appendChild(s2);
-  };
-  document.head.appendChild(s);
+  var result = _QR.encode(url);
+  if (!result) {
+    wrap.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:1rem;text-align:center">URL too long to encode as QR.<br>Use the token directly.</div>';
+    return;
+  }
+
+  var cellSize = Math.floor(180 / result.size);
+  var px = cellSize * result.size;
+  var canvas = document.createElement('canvas');
+  canvas.width = canvas.height = px;
+  var ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, px, px);
+  ctx.fillStyle = '#111110';
+  for (var r = 0; r < result.size; r++) {
+    for (var c = 0; c < result.size; c++) {
+      if (result.mat[r][c]) ctx.fillRect(c*cellSize, r*cellSize, cellSize, cellSize);
+    }
+  }
+  wrap.innerHTML = '';
+  wrap.appendChild(canvas);
 }
 
 // ── Auto-connect on load if token exists ──────────────────────────────────
