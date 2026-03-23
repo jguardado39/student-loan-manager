@@ -460,20 +460,49 @@ function showGistConnectedView(username) {
   document.getElementById('gist-connected-view').style.display = 'block';
   document.getElementById('gist-modal-title').textContent = 'GitHub Sync';
   if (username) document.getElementById('gist-connected-user').textContent = '@' + username;
-  // Generate QR code for the setup URL
-  loadQRLib(function() {
-    var token = localStorage.getItem('gh-token');
-    if (!token) return;
-    var url = window.location.origin + window.location.pathname + '?token=' + token;
-    var canvas = document.getElementById('qr-canvas');
-    if (!canvas) return;
-    QRCode.toCanvas(canvas, url, { width: 180, margin: 1, color: { dark: '#111110', light: '#ffffff' } }, function(err) {
-      if (err) console.error('QR error:', err);
-    });
-  });
+  // Generate QR code after a short delay so the modal is visible first
+  setTimeout(generateQR, 100);
 }
 
-// ── QR Library lazy loader ────────────────────────────────────────────────
+function generateQR() {
+  var token = localStorage.getItem('gh-token');
+  if (!token) return;
+  var url = window.location.origin + window.location.pathname + '?token=' + token;
+  var wrap = document.getElementById('qr-canvas-wrap');
+  if (!wrap) return;
+  // Build QR using qrcode-generator — no external lib needed, inline below
+  try {
+    var qr = qrcode(0, 'M');
+    qr.addData(url);
+    qr.make();
+    // Render as canvas manually for crisp display
+    var size = 180;
+    var modules = qr.getModuleCount();
+    var cellSize = Math.floor(size / modules);
+    var canvas = document.createElement('canvas');
+    canvas.width = canvas.height = cellSize * modules;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#111110';
+    for (var row = 0; row < modules; row++) {
+      for (var col = 0; col < modules; col++) {
+        if (qr.isDark(row, col)) {
+          ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+    wrap.innerHTML = '';
+    wrap.appendChild(canvas);
+  } catch(e) {
+    console.error('QR generation error:', e);
+    wrap.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:1rem;text-align:center">QR library loading...<br>Try closing and reopening the modal.</div>';
+    // Load qrcode-generator from CDN as fallback
+    if (!window._qrLibLoaded) loadQRLib(function() { generateQR(); });
+  }
+}
+
+// ── QR Library lazy loader (qrcode-generator) ─────────────────────────────
 var _qrLoaded = false, _qrLoading = false, _qrCbs = [];
 function loadQRLib(cb) {
   if (_qrLoaded) { if (cb) cb(); return; }
@@ -481,13 +510,13 @@ function loadQRLib(cb) {
   if (_qrLoading) return;
   _qrLoading = true;
   var s = document.createElement('script');
+  // qrcode-generator is reliable and has a stable cdnjs URL
   s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
-  s.onload = function() { _qrLoaded = true; _qrCbs.forEach(function(f) { f(); }); _qrCbs = []; };
+  s.onload = function() { window._qrLibLoaded = true; _qrLoaded = true; _qrCbs.forEach(function(f){f();}); _qrCbs = []; };
   s.onerror = function() {
-    // Fallback to alternative CDN
     var s2 = document.createElement('script');
-    s2.src = 'https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js';
-    s2.onload = function() { _qrLoaded = true; _qrCbs.forEach(function(f) { f(); }); _qrCbs = []; };
+    s2.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
+    s2.onload = function() { window._qrLibLoaded = true; _qrLoaded = true; _qrCbs.forEach(function(f){f();}); _qrCbs = []; };
     document.head.appendChild(s2);
   };
   document.head.appendChild(s);
@@ -832,7 +861,7 @@ autoConnect();
       <div class="qr-section">
         <div class="qr-title">📱 Add to another device</div>
         <div class="qr-wrap">
-          <div class="qr-canvas-wrap"><canvas id="qr-canvas"></canvas></div>
+          <div class="qr-canvas-wrap" id="qr-canvas-wrap"></div>
           <div class="qr-hint">Scan this QR code on your phone or another device.<br><strong>Keep it private</strong> — it contains your access token.</div>
         </div>
       </div>
