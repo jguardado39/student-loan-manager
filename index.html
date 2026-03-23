@@ -181,6 +181,27 @@
     .all-payments-stat-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
     .all-payments-stat-value{font-size:15px;font-weight:500;font-family:var(--mono)}.all-payments-stat-value.red{color:var(--danger)}
     .pay-link{color:var(--loan-color,var(--accent));font-weight:600;text-decoration:none;font-size:11px;transition:opacity .15s}.pay-link:hover{opacity:.7;text-decoration:underline}
+
+    /* ── Sync button ── */
+    .sync-btn{display:flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:7px 13px;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--sans);color:var(--text3);transition:all .15s;box-shadow:var(--shadow);white-space:nowrap}
+    .sync-btn:hover{background:var(--surface2);color:var(--text)}
+    .sync-btn.connected{color:var(--accent);border-color:var(--accent-soft)}
+    .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--text4);flex-shrink:0;transition:background .3s}
+    .sync-btn.connected .sync-dot{background:var(--accent)}
+    .sync-btn.syncing .sync-dot{background:var(--warn);animation:pulse 1s infinite}
+    .sync-btn.error .sync-dot{background:var(--danger)}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+    /* ── Gist modal ── */
+    .gist-steps{display:flex;flex-direction:column;gap:10px;margin-bottom:1.25rem}
+    .gist-step{display:flex;gap:10px;align-items:flex-start}
+    .gist-step-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+    .gist-step-text{font-size:13px;color:var(--text2);line-height:1.5}
+    .gist-step-text a{color:var(--accent);text-decoration:none;font-weight:600}
+    .gist-step-text a:hover{text-decoration:underline}
+    .token-row{display:flex;gap:8px}
+    .token-row input{flex:1;font-family:var(--mono);font-size:13px}
+    .disconnect-btn{width:100%;margin-top:.75rem;padding:.6rem;background:none;border:1.5px solid var(--danger-soft);border-radius:10px;color:var(--danger);font-size:13px;font-family:var(--sans);font-weight:600;cursor:pointer;transition:all .15s}
+    .disconnect-btn:hover{background:var(--danger-soft)}
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
     @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
     @media(max-width:520px){body{padding:1.5rem .9rem 3rem}.summary{grid-template-columns:repeat(2,1fr)}.header-left h1{font-size:26px}.loan-balance-remaining{font-size:17px}.form-row{grid-template-columns:1fr}}
@@ -191,6 +212,7 @@
   <div class="header">
     <div class="header-left"><h1>Student Loans</h1><p id="today-label"></p></div>
     <div class="header-right">
+      <button class="sync-btn" id="sync-btn" onclick="openGistModal()" title="GitHub Sync"><span class="sync-dot"></span><span id="sync-label">Sync</span></button>
       <button class="dark-toggle" onclick="exportCSV()" style="font-size:13px;font-family:var(--sans);font-weight:600;padding:8px 14px;">⬇ Export</button>
       <button class="dark-toggle" onclick="toggleDark()" id="dark-toggle-btn">🌙</button>
     </div>
@@ -318,7 +340,137 @@ var LS=['#d8ede4','#e8f0fb','#ede9fe','#fef9e7','#fdecea','#e0f2fe'];
 var LD=['#152a20','#182030','#1e1230','#2a2010','#2a1a18','#0c2030'];
 var ICONS={'Federal Direct Loan':'🎓','Perkins Loan':'🎓','PLUS Loan':'🎓','Private Loan':'🏦','Subsidized':'🎓','Unsubsidized':'🎓','Other':'💳'};
 
-function saveBills(){localStorage.setItem('slm-bills',JSON.stringify(bills));}
+function saveBills(){
+  localStorage.setItem('slm-bills',JSON.stringify(bills));
+  // Also save to Gist if connected
+  var token=localStorage.getItem('gh-token');
+  if(token) gistSave(bills);
+}
+
+// ── GitHub Gist Sync ──────────────────────────────────────────────────────
+var GIST_FILE = 'student_loans.json';
+
+function setSyncStatus(state, label) {
+  var btn = document.getElementById('sync-btn');
+  var lbl = document.getElementById('sync-label');
+  if (!btn) return;
+  btn.className = 'sync-btn ' + state;
+  lbl.textContent = label || (state === 'connected' ? 'Synced' : state === 'syncing' ? 'Saving…' : state === 'error' ? 'Sync error' : 'Sync');
+}
+
+async function gistSave(data) {
+  var token = localStorage.getItem('gh-token');
+  if (!token) return;
+  var gistId = localStorage.getItem('gh-gist-id');
+  setSyncStatus('syncing', 'Saving…');
+  try {
+    var body = JSON.stringify({ description: 'Student Loan Manager Data', public: false, files: { [GIST_FILE]: { content: JSON.stringify(data, null, 2) } } });
+    var url = gistId ? 'https://api.github.com/gists/' + gistId : 'https://api.github.com/gists';
+    var method = gistId ? 'PATCH' : 'POST';
+    var res = await fetch(url, { method: method, headers: { Authorization: 'token ' + token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' }, body: body });
+    var result = await res.json();
+    if (result.id) { localStorage.setItem('gh-gist-id', result.id); setSyncStatus('connected', 'Synced'); }
+    else { console.error('Gist save error:', result); setSyncStatus('error', 'Save failed'); }
+  } catch(e) { console.error('Gist save error:', e); setSyncStatus('error', 'Save failed'); }
+}
+
+async function gistLoad() {
+  var token = localStorage.getItem('gh-token');
+  if (!token) return false;
+  setSyncStatus('syncing', 'Loading…');
+  try {
+    var gistId = localStorage.getItem('gh-gist-id');
+    if (!gistId) {
+      // Search for existing gist
+      var res = await fetch('https://api.github.com/gists?per_page=100', { headers: { Authorization: 'token ' + token, Accept: 'application/vnd.github+json' } });
+      var list = await res.json();
+      if (!Array.isArray(list)) { setSyncStatus('error', 'Token error'); return false; }
+      var found = list.find(function(g) { return g.files && g.files[GIST_FILE]; });
+      if (found) { localStorage.setItem('gh-gist-id', found.id); gistId = found.id; }
+      else { setSyncStatus('connected', 'Synced'); return true; } // no gist yet, that's fine
+    }
+    var res2 = await fetch('https://api.github.com/gists/' + gistId, { headers: { Authorization: 'token ' + token, Accept: 'application/vnd.github+json' } });
+    var data = await res2.json();
+    if (data.files && data.files[GIST_FILE]) {
+      var parsed = JSON.parse(data.files[GIST_FILE].content);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        bills = parsed;
+        localStorage.setItem('slm-bills', JSON.stringify(bills));
+        render();
+      }
+    }
+    setSyncStatus('connected', 'Synced');
+    return true;
+  } catch(e) { console.error('Gist load error:', e); setSyncStatus('error', 'Load failed'); return false; }
+}
+
+async function connectGist() {
+  var input = document.getElementById('gh-token-input');
+  var token = input ? input.value.trim() : '';
+  if (!token) { alert('Please enter your GitHub token.'); return; }
+  setSyncStatus('syncing', 'Connecting…');
+  try {
+    var res = await fetch('https://api.github.com/user', { headers: { Authorization: 'token ' + token } });
+    var user = await res.json();
+    if (!user.login) { alert('Invalid token — please check and try again.'); setSyncStatus('error', 'Invalid token'); return; }
+    localStorage.setItem('gh-token', token);
+    localStorage.removeItem('gh-gist-id');
+    showGistConnectedView(user.login);
+    await gistLoad();
+  } catch(e) { alert('Could not connect to GitHub. Please check your token.'); setSyncStatus('error', 'Failed'); }
+}
+
+async function forceSyncFromGist() {
+  closeGistModal();
+  await gistLoad();
+}
+
+function disconnectGist() {
+  if (!confirm('Disconnect GitHub sync? Your data stays in localStorage but will not sync to other devices.')) return;
+  localStorage.removeItem('gh-token');
+  localStorage.removeItem('gh-gist-id');
+  showGistSetupView();
+  setSyncStatus('', 'Sync');
+  closeGistModal();
+}
+
+function openGistModal() {
+  var token = localStorage.getItem('gh-token');
+  if (token) showGistConnectedView(null); else showGistSetupView();
+  document.getElementById('gist-modal').classList.remove('hidden');
+}
+function closeGistModal() { document.getElementById('gist-modal').classList.add('hidden'); }
+
+function showGistSetupView() {
+  document.getElementById('gist-setup-view').style.display = 'block';
+  document.getElementById('gist-connected-view').style.display = 'none';
+  document.getElementById('gist-modal-title').textContent = 'Connect GitHub Sync';
+}
+
+function showGistConnectedView(username) {
+  document.getElementById('gist-setup-view').style.display = 'none';
+  document.getElementById('gist-connected-view').style.display = 'block';
+  document.getElementById('gist-modal-title').textContent = 'GitHub Sync';
+  if (username) document.getElementById('gist-connected-user').textContent = '@' + username;
+}
+
+// ── Auto-connect on load if token exists ──────────────────────────────────
+async function autoConnect() {
+  var token = localStorage.getItem('gh-token');
+  if (!token) return;
+  try {
+    var res = await fetch('https://api.github.com/user', { headers: { Authorization: 'token ' + token } });
+    var user = await res.json();
+    if (user.login) {
+      setSyncStatus('connected', 'Synced');
+      document.getElementById('gist-connected-user').textContent = '@' + user.login;
+      await gistLoad();
+    } else {
+      localStorage.removeItem('gh-token');
+      localStorage.removeItem('gh-gist-id');
+    }
+  } catch(e) { setSyncStatus('error', 'Offline?'); }
+}
 
 function toggleDark(){
   var d=document.body.classList.toggle('dark');
@@ -573,6 +725,62 @@ function exportCSV(){var today=new Date().toLocaleDateString('en-US'),rows=[['Lo
   var blob=new Blob([csv],{type:'text/csv'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='student_loans.csv';a.click();URL.revokeObjectURL(url);}
 
 render();
+autoConnect();
 </script>
+
+<!-- GitHub Gist Sync Modal -->
+<div class="modal-overlay hidden" id="gist-modal">
+  <div class="modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+      <h2 style="margin-bottom:0" id="gist-modal-title">Connect GitHub Sync</h2>
+      <button onclick="closeGistModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text3);padding:4px">✕</button>
+    </div>
+
+    <!-- Setup view (shown when not connected) -->
+    <div id="gist-setup-view">
+      <div class="gist-steps">
+        <div class="gist-step">
+          <div class="gist-step-num">1</div>
+          <div class="gist-step-text">Go to <a href="https://github.com/settings/tokens" target="_blank" rel="noopener">github.com/settings/tokens</a></div>
+        </div>
+        <div class="gist-step">
+          <div class="gist-step-num">2</div>
+          <div class="gist-step-text">Click <strong>Generate new token (classic)</strong></div>
+        </div>
+        <div class="gist-step">
+          <div class="gist-step-num">3</div>
+          <div class="gist-step-text">Set expiration to <strong>No expiration</strong> and check only the <strong>gist</strong> scope</div>
+        </div>
+        <div class="gist-step">
+          <div class="gist-step-num">4</div>
+          <div class="gist-step-text">Paste your token below — stored only on this device, never shared</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Personal Access Token</label>
+        <div class="token-row">
+          <input id="gh-token-input" type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off"/>
+          <button class="btn-primary" style="flex:0 0 auto;padding:.6rem 1.1rem" onclick="connectGist()">Connect</button>
+        </div>
+      </div>
+      <p style="font-size:11px;color:var(--text4);margin-top:.75rem;font-family:var(--mono)">Your token is saved only in your browser's localStorage. It is never sent anywhere except the GitHub API.</p>
+    </div>
+
+    <!-- Connected view (shown when connected) -->
+    <div id="gist-connected-view" style="display:none">
+      <div style="display:flex;align-items:center;gap:12px;padding:1rem;background:var(--accent-soft);border-radius:12px;margin-bottom:1.25rem">
+        <div style="font-size:28px">✅</div>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--accent)">Connected to GitHub</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px;font-family:var(--mono)" id="gist-connected-user">—</div>
+        </div>
+      </div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:1rem;line-height:1.5">Your loans are automatically saved to a private GitHub Gist called <strong>student_loans.json</strong> every time you make a change.</p>
+      <button class="btn-primary" onclick="forceSyncFromGist()" style="margin-bottom:.75rem;width:100%">↓ Pull latest from GitHub</button>
+      <button class="disconnect-btn" onclick="disconnectGist()">Disconnect GitHub sync</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
