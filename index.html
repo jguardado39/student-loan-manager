@@ -151,13 +151,14 @@
     .payoff-track{height:5px;background:var(--surface2);border-radius:999px;overflow:hidden}
     .payoff-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent-soft),var(--accent))}
     .payoff-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--text4);margin-top:6px;font-family:var(--mono);font-weight:300}
-    .chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.4rem;box-shadow:var(--shadow)}
+    .chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.4rem;box-shadow:var(--shadow);overflow:hidden}
     .chart-subtabs{display:flex;gap:3px;background:var(--tab-bg);border-radius:10px;padding:3px;margin-bottom:1.25rem}
     .chart-subtab{flex:1;padding:.4rem .5rem;border:none;border-radius:8px;background:none;font-size:12px;font-weight:600;font-family:var(--sans);color:var(--text3);cursor:pointer;transition:all .15s}
     .chart-subtab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
     .chart-subpanel{display:none}.chart-subpanel.active{display:block}
-    .chart-inner{display:flex;align-items:flex-end;gap:6px;height:140px;margin-top:.5rem}
-    .chart-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+    .chart-scroll{overflow-x:auto;overflow-y:hidden;margin-top:.5rem;border-radius:8px}
+    .chart-inner{display:flex;align-items:flex-end;gap:6px;height:140px;min-width:100%;width:max-content;padding-bottom:2px}
+    .chart-bar-wrap{flex:0 0 auto;width:44px;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
     .chart-bar{width:100%;border-radius:4px 4px 0 0;background:var(--accent-soft);min-height:2px;cursor:default;transition:background .15s}.chart-bar:hover{background:var(--accent)}
     .chart-amount{font-size:9px;color:var(--text4);font-family:var(--mono)}.chart-label{font-size:9px;color:var(--text3);white-space:nowrap;font-family:var(--mono)}
     .chart-empty{text-align:center;padding:2.5rem;color:var(--text4);font-size:13px}
@@ -287,7 +288,7 @@
           <button class="chart-subtab" id="subtab-balance" onclick="switchChart('balance')">Balance</button>
           <button class="chart-subtab" id="subtab-projection" onclick="switchChart('projection')">Projection</button>
         </div>
-        <div class="chart-subpanel active" id="subpanel-monthly"><div class="chart-inner" id="chart-inner"></div></div>
+        <div class="chart-subpanel active" id="subpanel-monthly"><div class="chart-scroll"><div class="chart-inner" id="chart-inner"></div></div></div>
         <div class="chart-subpanel" id="subpanel-balance"><div id="balance-chart-wrap"><canvas id="balance-chart" height="220"></canvas></div></div>
         <div class="chart-subpanel" id="subpanel-projection"><div id="projection-chart-wrap"><canvas id="projection-chart" height="220"></canvas></div></div>
       </div>
@@ -863,17 +864,7 @@ function openQuickPay(lid) {
   document.getElementById('qp-amount').value = b.amount || '';
   document.getElementById('qp-date').value = new Date().toISOString().split('T')[0];
   document.getElementById('qp-balance-preview').style.display = 'none';
-  // Show/hide payment site button
-  var siteBtn = document.getElementById('qp-site-btn');
-  if(b.payment_url) {
-    siteBtn.href = b.payment_url;
-    var host = '';
-    try { host = new URL(b.payment_url).hostname.replace(/^www\./,''); } catch(e) { host = b.payment_url; }
-    document.getElementById('qp-site-label').textContent = 'Go to ' + host + ' →';
-    siteBtn.style.display = 'flex';
-  } else {
-    siteBtn.style.display = 'none';
-  }
+
   document.getElementById('quick-pay-modal').classList.remove('hidden');
   updateQPPreview();
   setTimeout(function(){ document.getElementById('qp-amount').select(); }, 50);
@@ -997,10 +988,7 @@ function saveQuickPayment() {
         <label class="qp-field-label">Date paid</label>
         <input id="qp-date" type="date"/>
       </div>
-      <a class="qp-site-btn" id="qp-site-btn" href="#" target="_blank" rel="noopener" style="display:none">
-        <span class="qp-site-btn-icon">🌐</span>
-        <span id="qp-site-label">Go to payment site →</span>
-      </a>
+
       <div class="qp-actions">
         <button class="btn-secondary" onclick="closeQuickPay()">No, cancel</button>
         <button class="qp-confirm-btn" id="qp-confirm-btn" onclick="saveQuickPayment()">Yes, log my payment</button>
