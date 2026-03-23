@@ -620,7 +620,7 @@ function render(){
         (bill.loan_type?'<span class="badge '+tbc+'">'+bill.loan_type+'</span>':'')+
         (isArch?'<span class="badge badge-ok">Paid off 🎓</span>':'<span class="badge '+st.cls+'">'+st.label+'</span>')+
       '</div><div class="bill-meta">'+(isArch?'Paid off':'Due '+dl2)+
-        (bill.payment_url&&!isArch?' &nbsp;·&nbsp; <a href="'+bill.payment_url+'" target="_blank" rel="noopener" class="pay-link" onclick="event.stopPropagation()">Make a payment →</a>':'')+
+        (bill.payment_url&&!isArch?' &nbsp;·&nbsp; <a href="#" class="pay-link" onclick="event.preventDefault();event.stopPropagation();openQuickPay('+bill.id+')">Make a payment →</a>':'')+
       '</div></div>'+
       '<div class="loan-balance-block"><div class="loan-balance-remaining">$'+fmt(rem)+'</div><div class="loan-balance-label">remaining</div><div class="loan-monthly">$'+fmt(bill.amount)+'/mo</div></div>'+
       '<div class="card-right">'+
@@ -842,9 +842,6 @@ function openQuickPay(lid) {
   // Populate context
   var name = b.name;
   document.getElementById('qp-title').textContent = 'Pay ' + (name.length > 20 ? name.slice(0,19)+'…' : name);
-  document.getElementById('qp-loan-name').textContent = name.length > 14 ? name.slice(0,13)+'…' : name;
-  document.getElementById('qp-current-balance').textContent = '$' + fmt(b.remaining_balance != null ? b.remaining_balance : b.amount);
-  document.getElementById('qp-monthly').textContent = '$' + fmt(b.amount) + '/mo';
   // Pre-fill with monthly payment amount and today's date
   document.getElementById('qp-amount').value = b.amount || '';
   document.getElementById('qp-date').value = new Date().toISOString().split('T')[0];
@@ -965,12 +962,7 @@ function saveQuickPayment() {
     <div class="qp-header" id="qp-header">
       <div class="qp-header-eyebrow">Confirm payment</div>
       <div class="qp-header-title" id="qp-title">Make a payment</div>
-      <div class="qp-loan-context">
-        <div class="qp-context-item">
-          <div class="qp-context-label">Monthly payment</div>
-          <div class="qp-context-value" id="qp-monthly">—</div>
-        </div>
-      </div>
+
     </div>
     <div class="qp-body">
       <div class="qp-field">
