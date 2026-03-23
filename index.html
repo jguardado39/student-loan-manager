@@ -874,21 +874,38 @@
     var input = document.getElementById("gh-token-input");
     var token = input ? input.value.trim() : "";
     if (!token) { alert("Please enter a token."); return; }
-    // Validate token by hitting the GitHub API
     setSyncStatus("syncing", "Validating…");
     try {
+      // Step 1: Validate token
       var res  = await fetch("https://api.github.com/user", { headers: { Authorization: "token " + token } });
       var user = await res.json();
-      if (!user.login) { alert("Invalid token — please check and try again."); setSyncStatus("error", "Invalid token"); return; }
-      localStorage.setItem("gh-token",   token);
-      localStorage.removeItem("gh-gist-id"); // reset so we search for existing gist
+      if (!user.login) {
+        alert("Invalid token — please check and try again.");
+        setSyncStatus("error", "Invalid token");
+        return;
+      }
+
+      // Step 2: Save token and show connected UI
+      localStorage.setItem("gh-token", token);
+      localStorage.removeItem("gh-gist-id");
       closeGistModal();
-      // Show connected UI
       setGistConnectedUI(user.login, user.avatar_url);
-      // Load data from Gist
+
+      // Step 3: Try to load existing gist data
       var loaded = await window.gistLoad();
-      if (loaded) { window._isGuestMode = false; window.render(); }
+
+      // Step 4: Switch out of guest mode and render safely
+      window._isGuestMode = false;
+      if (!loaded || !window.bills || window.bills.length === 0) {
+        // Brand new user — start with empty loans list
+        window.bills = [];
+      }
+      window._appReady = true;
+      window.render();
+      setSyncStatus("synced", "Synced");
+
     } catch(e) {
+      console.error("Connect error:", e);
       alert("Could not connect to GitHub. Check your token and try again.");
       setSyncStatus("error", "Connection failed");
     }
@@ -939,18 +956,36 @@
     try {
       var res  = await fetch("https://api.github.com/user", { headers: { Authorization: "token " + token } });
       var user = await res.json();
-      if (user.login) {
-        setGistConnectedUI(user.login, user.avatar_url);
-        var cached = localStorage.getItem("slm-bills-cache");
-        if (cached) {
-          try { window.bills = JSON.parse(cached); window._isGuestMode = false; window.render(); } catch(e) {}
-        }
-        var loaded = await window.gistLoad();
-        if (loaded) { window._isGuestMode = false; window.render(); }
-      } else {
-        setGistDisconnectedUI();
+      if (!user.login) { setGistDisconnectedUI(); return; }
+
+      // Show connected UI immediately
+      setGistConnectedUI(user.login, user.avatar_url);
+
+      // Try local cache first for instant render
+      var cached = localStorage.getItem("slm-bills-cache");
+      if (cached) {
+        try {
+          var parsed = JSON.parse(cached);
+          if (parsed && parsed.length > 0) {
+            window.bills = parsed;
+            window._isGuestMode = false;
+            window._appReady = true;
+            window.render();
+          }
+        } catch(e) { console.warn("Cache parse failed:", e); }
       }
+
+      // Then load fresh from Gist
+      var loaded = await window.gistLoad();
+      window._isGuestMode = false;
+      if (!window.bills || window.bills.length === 0) {
+        window.bills = [];
+      }
+      window._appReady = true;
+      window.render();
+
     } catch(e) {
+      console.warn("Auto-connect failed:", e);
       setGistDisconnectedUI();
     }
   };
