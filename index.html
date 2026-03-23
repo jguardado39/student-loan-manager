@@ -859,12 +859,6 @@ function openQuickPay(lid) {
   // Populate context
   var name = b.name;
   document.getElementById('qp-title').textContent = 'Pay ' + (name.length > 20 ? name.slice(0,19)+'…' : name);
-<<<<<<< HEAD
-=======
-  document.getElementById('qp-loan-name').textContent = name.length > 14 ? name.slice(0,13)+'…' : name;
-  document.getElementById('qp-current-balance').textContent = '$' + fmt(b.remaining_balance != null ? b.remaining_balance : b.amount);
-  document.getElementById('qp-monthly').textContent = '$' + fmt(b.amount) + '/mo';
->>>>>>> 1867db6fc0d6b74854fe42b808e42ac5f5902000
   // Pre-fill with monthly payment amount and today's date
   document.getElementById('qp-amount').value = b.amount || '';
   document.getElementById('qp-date').value = new Date().toISOString().split('T')[0];
@@ -1010,48 +1004,6 @@ function saveQuickPayment() {
       <div class="qp-actions">
         <button class="btn-secondary" onclick="closeQuickPay()">No, cancel</button>
         <button class="qp-confirm-btn" id="qp-confirm-btn" onclick="saveQuickPayment()">Yes, log my payment</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<!-- Quick Payment Modal -->
-<div class="modal-overlay hidden" id="quick-pay-modal">
-  <div class="modal">
-    <div class="qp-header" id="qp-header">
-      <div class="qp-header-eyebrow">Confirm payment</div>
-      <div class="qp-header-title" id="qp-title">Make a payment</div>
-      <div class="qp-loan-context">
-        <div class="qp-context-item">
-          <div class="qp-context-label">Monthly payment</div>
-          <div class="qp-context-value" id="qp-monthly">—</div>
-        </div>
-      </div>
-    </div>
-    <div class="qp-body">
-      <div class="qp-field">
-        <label class="qp-field-label">Payment amount ($)</label>
-        <div class="qp-amount-wrap">
-          <input class="qp-amount-input" id="qp-amount" type="number" placeholder="0.00" step="0.01" oninput="updateQPPreview()" style="padding-left:.85rem"/>
-        </div>
-        <div class="qp-new-balance" id="qp-balance-preview" style="display:none">
-          <span class="qp-new-balance-label">New balance</span>
-          <span class="qp-new-balance-value" id="qp-balance-val">—</span>
-        </div>
-      </div>
-      <div class="qp-divider"></div>
-      <div class="qp-field">
-        <label class="qp-field-label">Date paid</label>
-        <input id="qp-date" type="date"/>
-      </div>
-      <a class="qp-site-btn" id="qp-site-btn" href="#" target="_blank" rel="noopener" style="display:none">
-        <span class="qp-site-btn-icon">🌐</span>
-        <span id="qp-site-label">Go to payment site →</span>
-      </a>
-      <div class="qp-actions">
-        <button class="btn-secondary" onclick="closeQuickPay()">Cancel</button>
-        <button class="qp-confirm-btn" id="qp-confirm-btn" onclick="saveQuickPayment()">Confirm payment</button>
       </div>
     </div>
   </div>
