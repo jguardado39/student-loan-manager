@@ -1043,22 +1043,35 @@
     window.gistSave && window.gistSave(window.bills);
   }
 
-  // ── Bootstrap: render sample data right away, then auto-connect Gist ──────
-  (function() {
-    if (localStorage.getItem("darkMode") === "1") document.body.classList.add("dark");
-    // Render sample data immediately
-    window._appReady = true;
-    window.render();
-    // If token exists, auto-connect and swap in real data
-    if (window._gistAutoConnect) {
-      window._gistAutoConnect();
-    } else {
+  // ── Bootstrap: wait for DOM then render ─────────────────────────────────
+  function _bootstrap() {
+    try {
+      if (localStorage.getItem("darkMode") === "1") document.body.classList.add("dark");
+      // Make sure bills is always a valid array before rendering
+      if (!window.bills || !Array.isArray(window.bills)) {
+        window.bills = JSON.parse(JSON.stringify(SAMPLE_BILLS));
+      }
+      window._appReady = true;
+      window.render();
+      // Auto-connect Gist if token exists
       setTimeout(function() {
-        if (window._gistAutoConnect) window._gistAutoConnect();
-        else if (window._setSignedOutUI) window._setSignedOutUI();
-      }, 100);
+        if (window._gistAutoConnect) {
+          window._gistAutoConnect();
+        } else if (window._setSignedOutUI) {
+          window._setSignedOutUI();
+        }
+      }, 50);
+    } catch(e) {
+      console.error("Bootstrap error:", e);
     }
-  })();
+  }
+
+  // Run after DOM is fully ready
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", _bootstrap);
+  } else {
+    _bootstrap();
+  }
 
   // ── Dark mode ─────────────────────────────────────────────────────────────
   function toggleDark() {
