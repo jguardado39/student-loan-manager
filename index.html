@@ -1141,16 +1141,18 @@
 
   // ── Render ────────────────────────────────────────────────────────────────
   function render() {
-    const bills = window.bills;
+    try {
+    const bills = window.bills || [];
     const today = new Date(); today.setHours(0,0,0,0);
-    document.getElementById("today-label").textContent = today.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+    var todayLabel = document.getElementById("today-label");
+    if (todayLabel) todayLabel.textContent = today.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
 
     let total=0, dueWeek=0, overdue=0, totalDebt=0;
     bills.forEach(b => {
-      total += b.amount;
+      total += b.amount||0;
       totalDebt += b.remaining_balance||0;
       const diff = Math.round((new Date(b.due_date+"T00:00:00")-today)/86400000);
-      if (diff < 0) overdue += b.amount; else if (diff <= 7) dueWeek += b.amount;
+      if (diff < 0) overdue += b.amount||0; else if (diff <= 7) dueWeek += b.amount||0;
     });
     animateValue("total-monthly", total);
     animateValue("due-week",      dueWeek);
@@ -1160,6 +1162,7 @@
     const container      = document.getElementById("loans-list");
     const archivedList   = document.getElementById("archived-list");
     const archivedSection = document.getElementById("archived-section");
+    if (!container || !archivedList || !archivedSection) { console.error("render(): DOM elements not found"); return; }
     container.innerHTML    = "";
     archivedList.innerHTML = "";
 
@@ -1320,6 +1323,7 @@
 
     activeLoans.forEach((bill,i)  => buildLoanBlock(bill, false, i));
     archivedLoans.forEach((bill,i)=> buildLoanBlock(bill, true, activeLoans.length+i));
+    } catch(e) { console.error("render() error:", e); }
   }
 
   // ── Analytics ─────────────────────────────────────────────────────────────
