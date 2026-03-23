@@ -202,9 +202,47 @@
     .token-row input{flex:1;font-family:var(--mono);font-size:13px}
     .disconnect-btn{width:100%;margin-top:.75rem;padding:.6rem;background:none;border:1.5px solid var(--danger-soft);border-radius:10px;color:var(--danger);font-size:13px;font-family:var(--sans);font-weight:600;cursor:pointer;transition:all .15s}
     .disconnect-btn:hover{background:var(--danger-soft)}
+
+    /* ── QR Code ── */
+    .qr-section{margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border2)}
+    .qr-title{font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.75rem}
+    .qr-wrap{display:flex;flex-direction:column;align-items:center;gap:.75rem}
+    .qr-canvas-wrap{background:#fff;border-radius:12px;padding:12px;border:1px solid var(--border);display:inline-block}
+    .qr-hint{font-size:12px;color:var(--text3);text-align:center;font-family:var(--mono);line-height:1.5}
+    .qr-hint strong{color:var(--danger)}
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
     @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
     @media(max-width:520px){body{padding:1.5rem .9rem 3rem}.summary{grid-template-columns:repeat(2,1fr)}.header-left h1{font-size:26px}.loan-balance-remaining{font-size:17px}.form-row{grid-template-columns:1fr}}
+
+    /* ── Quick Payment Modal ── */
+    #quick-pay-modal .modal{max-width:420px;padding:0;overflow:hidden;border-radius:22px}
+    .qp-header{padding:1.5rem 1.75rem 1.25rem;position:relative}
+    .qp-header-eyebrow{font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:4px;font-family:var(--mono)}
+    .qp-header-title{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.4px}
+    .qp-loan-context{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.12);border-radius:12px;padding:.75rem 1rem;margin-top:1rem}
+    .qp-context-item{flex:1}
+    .qp-context-label{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.5);margin-bottom:2px}
+    .qp-context-value{font-family:var(--mono);font-size:15px;font-weight:500;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .qp-context-divider{width:1px;height:28px;background:rgba(255,255,255,.2);flex-shrink:0}
+    .qp-body{padding:1.5rem 1.75rem 1.75rem}
+    .qp-field-label{display:block;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
+    .qp-field{margin-bottom:1rem}
+    .qp-amount-wrap{position:relative}
+    .qp-amount-prefix{position:absolute;left:.85rem;top:50%;transform:translateY(-50%);font-size:18px;font-weight:700;color:var(--text3);font-family:var(--mono);pointer-events:none}
+    .qp-amount-input{width:100%;padding:.75rem .85rem .75rem 1.75rem;border:1.5px solid var(--border);border-radius:10px;font-size:22px;font-weight:700;font-family:var(--mono);outline:none;background:var(--input-bg);color:var(--text);transition:border-color .15s,box-shadow .15s;letter-spacing:-.5px}
+    .qp-amount-input:focus{border-color:var(--qp-color,var(--accent));box-shadow:0 0 0 3px rgba(45,106,79,.1)}
+    .qp-new-balance{margin-top:.75rem;padding:.75rem 1rem;border-radius:10px;background:var(--accent-soft);border:1.5px solid rgba(45,106,79,.2);display:flex;align-items:baseline;justify-content:space-between}
+    .qp-new-balance-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--accent)}
+    .qp-new-balance-value{font-family:var(--mono);font-size:18px;font-weight:500;color:var(--accent);letter-spacing:-.5px}
+    .qp-divider{height:1px;background:var(--border);margin:1.25rem 0}
+    .qp-date-row{display:flex;align-items:center;gap:10px}
+    .qp-date-row input{flex:1}
+    .qp-actions{display:flex;gap:10px;margin-top:1.5rem}
+    .qp-confirm-btn{flex:1;padding:.7rem 1rem;border:none;border-radius:11px;font-size:14px;font-weight:700;font-family:var(--sans);cursor:pointer;transition:opacity .15s;color:#fff;background:var(--qp-color,var(--accent))}
+    .qp-confirm-btn:hover{opacity:.85}
+    .qp-site-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:.6rem 1rem;border:1.5px solid var(--border);border-radius:11px;font-size:13px;font-weight:600;font-family:var(--sans);cursor:pointer;background:none;color:var(--text2);text-decoration:none;transition:all .15s;margin-bottom:10px}
+    .qp-site-btn:hover{background:var(--surface2);border-color:var(--text3)}
+    .qp-site-btn-icon{font-size:14px}
   </style>
 </head>
 <body>
@@ -452,13 +490,70 @@ function showGistConnectedView(username) {
   document.getElementById('gist-connected-view').style.display = 'block';
   document.getElementById('gist-modal-title').textContent = 'GitHub Sync';
   if (username) document.getElementById('gist-connected-user').textContent = '@' + username;
-
+  // Generate QR code after a short delay so the modal is visible first
+  setTimeout(generateQR, 100);
 }
 
+// ── Self-contained QR Code Generator (verified working) ─────────────────
+var EXP=new Array(512),LOG=new Array(256);
+(function(){var x=1;for(var i=0;i<256;i++){EXP[i]=x;EXP[i+255]=x;if(i>0)LOG[x]=i;x=x<128?x*2:(x*2)^285;}LOG[1]=0;})();
+function gmul(a,b){return(!a||!b)?0:EXP[LOG[a]+LOG[b]];}
+function polyMul(p,q){var r=new Array(p.length+q.length-1).fill(0);for(var i=0;i<p.length;i++)for(var j=0;j<q.length;j++)r[i+j]^=gmul(p[i],q[j]);return r;}
+function ecGen(n){var g=[1];for(var i=0;i<n;i++)g=polyMul(g,[1,EXP[i]]);return g;}
+function rsEncode(data,nEC){var gen=ecGen(nEC);var msg=data.slice().concat(new Array(nEC).fill(0));for(var i=0;i<data.length;i++){var c=msg[i];if(c)for(var j=0;j<gen.length;j++)msg[i+j]^=gmul(gen[j],c);}return msg.slice(data.length);}
+var QRCAP=[null,{ec:10,data:16},{ec:16,data:28},{ec:26,data:44},{ec:36,data:64},{ec:46,data:86},{ec:60,data:108},{ec:66,data:124},{ec:82,data:154},{ec:96,data:182},{ec:114,data:216}];
+function qrVersion(len){for(var v=1;v<=10;v++)if(QRCAP[v].data>=len+3)return v;return -1;}
+function qrBits(data,version){var cap=QRCAP[version];var bits=[];function push(val,n){for(var i=n-1;i>=0;i--)bits.push((val>>i)&1);}push(4,4);push(data.length,8);for(var i=0;i<data.length;i++)push(data[i],8);for(var i=0;i<4&&bits.length<cap.data*8;i++)bits.push(0);while(bits.length%8)bits.push(0);var pads=[0xEC,0x11],pi=0;while(bits.length<cap.data*8)push(pads[pi++&1],8);return bits;}
+function qrB2B(bits){var out=[];for(var i=0;i<bits.length;i+=8){var b=0;for(var j=0;j<8;j++)b=(b<<1)|(bits[i+j]||0);out.push(b);}return out;}
+function qrMat(size){var m=[],u=[];for(var i=0;i<size;i++){m.push(new Array(size).fill(0));u.push(new Array(size).fill(false));}return {m:m,u:u,size:size};}
+function qrSet(mx,r,c,v){mx.m[r][c]=v;mx.u[r][c]=true;}
+function qrFinder(mx,r,c){for(var i=-1;i<=7;i++)for(var j=-1;j<=7;j++){var rr=r+i,cc=c+j;if(rr<0||rr>=mx.size||cc<0||cc>=mx.size)continue;var dark=(i>=0&&i<=6&&(j===0||j===6))||(j>=0&&j<=6&&(i===0||i===6))||(i>=2&&i<=4&&j>=2&&j<=4);qrSet(mx,rr,cc,dark?1:0);}}
+function qrTiming(mx){for(var i=8;i<mx.size-8;i++){qrSet(mx,6,i,i%2===0?1:0);qrSet(mx,i,6,i%2===0?1:0);}}
+var QRALIGN=[null,[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50]];
+function qrAlign(mx,v){var pos=QRALIGN[v];if(!pos||pos.length<2)return;for(var i=0;i<pos.length;i++)for(var j=0;j<pos.length;j++){var r=pos[i],c=pos[j];if(mx.u[r][c])continue;for(var di=-2;di<=2;di++)for(var dj=-2;dj<=2;dj++){var dark=Math.max(Math.abs(di),Math.abs(dj))!==1;qrSet(mx,r+di,c+dj,dark?1:0);}}}
+function qrFmt(mx){var data=(1<<3)|2;var g=0x537;var ecc=data<<10;for(var i=4;i>=0;i--){if((ecc>>(i+10))&1)ecc^=(g<<i);}var fmt=((data<<10)|(ecc&0x3FF))^0x5412;var fb=[];for(var i=14;i>=0;i--)fb.push((fmt>>i)&1);var s=mx.size;var p1=[[8,0],[8,1],[8,2],[8,3],[8,4],[8,5],[8,7],[8,8],[7,8],[5,8],[4,8],[3,8],[2,8],[1,8],[0,8]];var p2=[[s-1,8],[s-2,8],[s-3,8],[s-4,8],[s-5,8],[s-6,8],[s-7,8],[8,s-8],[8,s-7],[8,s-6],[8,s-5],[8,s-4],[8,s-3],[8,s-2],[8,s-1]];for(var i=0;i<15;i++){qrSet(mx,p1[i][0],p1[i][1],fb[i]);qrSet(mx,p2[i][0],p2[i][1],fb[i]);}qrSet(mx,s-8,8,1);}
+function qrData(mx,allBits){var bi=0,dir=-1,col=mx.size-1;while(col>0){if(col===6)col--;for(var count=0;count<mx.size;count++){var row=dir===-1?mx.size-1-count:count;for(var dc=0;dc<2;dc++){var cc=col-dc;if(mx.u[row][cc])continue;var bit=bi<allBits.length?allBits[bi++]:0;if((row+cc)%3===0)bit^=1;mx.m[row][cc]=bit;mx.u[row][cc]=true;}}dir=-dir;col-=2;}}
+function qrEncode(text){var bytes=[];for(var i=0;i<text.length;i++){var c=text.charCodeAt(i);if(c>255)return null;bytes.push(c);}var v=qrVersion(bytes.length);if(v<0)return null;var cap=QRCAP[v];var bits=qrBits(bytes,v);var data=qrB2B(bits);var ec=rsEncode(data,cap.ec);var all=data.concat(ec);var allBits=[];for(var i=0;i<all.length;i++)for(var j=7;j>=0;j--)allBits.push((all[i]>>j)&1);var size=v*4+17;var mx=qrMat(size);qrFinder(mx,0,0);qrFinder(mx,0,size-7);qrFinder(mx,size-7,0);qrTiming(mx);qrAlign(mx,v);qrFmt(mx);qrData(mx,allBits);return mx;}
 
+function generateQR() {
+  var token = localStorage.getItem('gh-token');
+  if (!token) return;
+  var url = window.location.origin + window.location.pathname + '?token=' + token;
+  var wrap = document.getElementById('qr-canvas-wrap');
+  if (!wrap) return;
+  var result = qrEncode(url);
+  if (!result) {
+    wrap.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:1rem;text-align:center">URL too long to encode.</div>';
+    return;
+  }
+  var cellSize = Math.max(3, Math.floor(200 / result.size));
+  var px = cellSize * result.size;
+  var canvas = document.createElement('canvas');
+  canvas.width = canvas.height = px;
+  var ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, px, px);
+  ctx.fillStyle = '#111110';
+  for (var r=0; r<result.size; r++)
+    for (var c=0; c<result.size; c++)
+      if (result.m[r][c]) ctx.fillRect(c*cellSize, r*cellSize, cellSize, cellSize);
+  wrap.innerHTML = '';
+  wrap.appendChild(canvas);
+}
 
 // ── Auto-connect on load if token exists ──────────────────────────────────
 async function autoConnect() {
+  // Check for token in URL first (from QR code scan)
+  var urlParams = new URLSearchParams(window.location.search);
+  var urlToken = urlParams.get('token');
+  if (urlToken) {
+    localStorage.setItem('gh-token', urlToken);
+    localStorage.removeItem('gh-gist-id');
+    // Clean token from URL so it is not visible in browser bar
+    var cleanUrl = window.location.origin + window.location.pathname;
+    window.history.replaceState({}, document.title, cleanUrl);
+  }
+
   var token = localStorage.getItem('gh-token');
   if (!token) return;
   try {
@@ -525,15 +620,15 @@ function render(){
         (bill.loan_type?'<span class="badge '+tbc+'">'+bill.loan_type+'</span>':'')+
         (isArch?'<span class="badge badge-ok">Paid off 🎓</span>':'<span class="badge '+st.cls+'">'+st.label+'</span>')+
       '</div><div class="bill-meta">'+(isArch?'Paid off':'Due '+dl2)+
-        (bill.payment_url&&!isArch?' &nbsp;·&nbsp; <a href="'+bill.payment_url+'" target="_blank" rel="noopener" class="pay-link" onclick="event.stopPropagation()">Make a payment →</a>':'')+
+        (bill.payment_url&&!isArch?' &nbsp;·&nbsp; <a href="'+bill.payment_url+'" target="_blank" rel="noopener" class="pay-link qp-trigger" data-lid="'+bill.id+'">Make a payment →</a>':'')+
       '</div></div>'+
       '<div class="loan-balance-block"><div class="loan-balance-remaining">$'+fmt(rem)+'</div><div class="loan-balance-label">remaining</div><div class="loan-monthly">$'+fmt(bill.amount)+'/mo</div></div>'+
       '<div class="card-right">'+
         '<button class="expand-btn '+(isOpen?'open':'')+'" id="expand-btn-'+bill.id+'" onclick="togglePanel('+bill.id+')">'+(isOpen?'▲':'▼')+'</button>'+
         '<div class="menu-wrap"><button class="menu-trigger" onclick="toggleMenu('+bill.id+',event)">⋯</button>'+
           '<div class="menu-dropdown" id="menu-'+bill.id+'" style="display:none;">'+
-            (isArch?'<button class="menu-item" onclick="unarchiveLoan('+bill.id+');closeMenu('+bill.id+')">↩️ &nbsp;Restore loan</button>':'<button class="menu-item" onclick="markPaid('+bill.id+');closeMenu('+bill.id+')">✅ &nbsp;Mark as paid</button>')+
-            (bill.payment_url&&!isArch?'<a class="menu-item" href="'+bill.payment_url+'" target="_blank" rel="noopener" onclick="closeMenu('+bill.id+')" style="text-decoration:none">🌐 &nbsp;Make a payment</a>':'')+
+            (isArch?'<button class="menu-item" onclick="unarchiveLoan('+bill.id+');closeMenu('+bill.id+')">↩️ &nbsp;Restore loan</button>':'')+
+
             '<button class="menu-item" onclick="openLoanModal('+bill.id+');closeMenu('+bill.id+')">✏️ &nbsp;Edit loan</button>'+
             '<div class="menu-divider"></div>'+
             '<button class="menu-item danger" onclick="deleteLoan('+bill.id+');closeMenu('+bill.id+')">🗑️ &nbsp;Delete loan</button>'+
@@ -657,6 +752,23 @@ function toggleMenu(id,e){e.stopPropagation();var m=document.getElementById('men
 function closeMenu(id){var m=document.getElementById('menu-'+id);if(m){m.style.display='none';if(m.previousElementSibling)m.previousElementSibling.classList.remove('active');}}
 function closeAllMenus(){document.querySelectorAll('.menu-dropdown').forEach(function(m){m.style.display='none';});document.querySelectorAll('.menu-trigger').forEach(function(t){t.classList.remove('active');});}
 document.addEventListener('click',closeAllMenus);
+
+// Quick pay trigger via event delegation — opens external site AND shows popup
+document.addEventListener('click', function(e) {
+  var trigger = e.target.closest('.qp-trigger');
+  if (trigger) {
+    e.stopPropagation();
+    // Let the link open the external URL naturally, then show the popup
+    openQuickPay(parseInt(trigger.dataset.lid));
+  }
+});
+
+// Close quick pay modal when clicking overlay
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('quick-pay-modal').addEventListener('click', function(e) {
+    if (e.target === document.getElementById('quick-pay-modal')) closeQuickPay();
+  });
+});
 function togglePanel(id){openPanels[id]=!openPanels[id];var p=document.getElementById('panel-'+id),b=document.getElementById('expand-btn-'+id);if(p)p.classList.toggle('open',openPanels[id]);if(b){b.classList.toggle('open',openPanels[id]);b.textContent=openPanels[id]?'▲':'▼';}}
 function openLoanModal(id){editingLoanId=id||null;var b=id?bills.find(function(x){return x.id===id;}):null;var rem=b?(b.remaining_balance!==undefined?b.remaining_balance:b.amount):'';var start=b?(b.starting_balance||rem):'';
   document.getElementById('f-name').value=b?b.name:'';document.getElementById('f-type').value=b?(b.loan_type||'Federal'):'Federal';document.getElementById('f-amount').value=b?b.amount:'';document.getElementById('f-rate').value=b?(b.interest_rate!=null?b.interest_rate:''):'';document.getElementById('f-start-balance').value=start;document.getElementById('f-day').value=b?b.due_date:'';document.getElementById('f-url').value=b?(b.payment_url||''):'';
@@ -730,6 +842,73 @@ function exportCSV(){var today=new Date().toLocaleDateString('en-US'),rows=[['Lo
 
 render();
 autoConnect();
+
+var activeQuickPayId = null;
+function openQuickPay(lid) {
+  activeQuickPayId = lid;
+  var b = bills.find(function(x){return x.id===lid;});
+  if(!b) return;
+  var isDark = document.body.classList.contains('dark');
+  var ci = bills.filter(function(x){return !x.archived;}).indexOf(b);
+  var lc = LC[ci%LC.length];
+  // Style header with loan color
+  var hdr = document.getElementById('qp-header');
+  hdr.style.background = 'linear-gradient(135deg,'+lc+' 0%, #1f5c3c 100%)';
+  document.getElementById('qp-confirm-btn').style.background = lc;
+  document.querySelector('#quick-pay-modal .qp-amount-input').style.setProperty('--qp-color', lc);
+  // Populate context
+  var name = b.name;
+  document.getElementById('qp-title').textContent = 'Pay ' + (name.length > 20 ? name.slice(0,19)+'…' : name);
+  // Pre-fill with monthly payment amount and today's date
+  document.getElementById('qp-amount').value = b.amount || '';
+  document.getElementById('qp-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('qp-balance-preview').style.display = 'none';
+  // Show/hide payment site button
+  var siteBtn = document.getElementById('qp-site-btn');
+  if(b.payment_url) {
+    siteBtn.href = b.payment_url;
+    var host = '';
+    try { host = new URL(b.payment_url).hostname.replace(/^www\./,''); } catch(e) { host = b.payment_url; }
+    document.getElementById('qp-site-label').textContent = 'Go to ' + host + ' →';
+    siteBtn.style.display = 'flex';
+  } else {
+    siteBtn.style.display = 'none';
+  }
+  document.getElementById('quick-pay-modal').classList.remove('hidden');
+  updateQPPreview();
+  setTimeout(function(){ document.getElementById('qp-amount').select(); }, 50);
+}
+function closeQuickPay() {
+  document.getElementById('quick-pay-modal').classList.add('hidden');
+  activeQuickPayId = null;
+}
+function updateQPPreview() {
+  var b = bills.find(function(x){return x.id===activeQuickPayId;}); if(!b) return;
+  var amt = parseFloat(document.getElementById('qp-amount').value);
+  var preview = document.getElementById('qp-balance-preview');
+  var balVal  = document.getElementById('qp-balance-val');
+  if(isNaN(amt)||amt<=0){preview.style.display='none';return;}
+  var start = b.starting_balance||0;
+  var soFar = (b.loan_history||[]).reduce(function(s,e){return s+(e.principal_paid||0);},0);
+  var newBal = Math.max(0, start - soFar - amt);
+  balVal.textContent = '$' + fmt(newBal);
+  preview.style.display = 'flex';
+}
+function saveQuickPayment() {
+  var b = bills.find(function(x){return x.id===activeQuickPayId;}); if(!b) return;
+  var amt = parseFloat(document.getElementById('qp-amount').value);
+  var rd  = document.getElementById('qp-date').value;
+  if(!rd||isNaN(amt)||amt<=0){alert('Please enter a valid payment amount and date.');return;}
+  var po = new Date(rd+'T00:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  var entry = {paid_on:po,paid_on_raw:rd,amount_paid:amt,principal_paid:amt,interest_paid:0,remaining_balance:0};
+  if(!b.loan_history) b.loan_history=[];
+  b.loan_history.push(entry);
+  recomputeBalances(b);
+  var nb = b.remaining_balance;
+  saveBills(); render(); closeQuickPay();
+  if(!nb) setTimeout(function(){celebrate(b.name,b.id);},300);
+}
+
 </script>
 
 <!-- GitHub Gist Sync Modal -->
@@ -781,10 +960,51 @@ autoConnect();
       </div>
       <p style="font-size:13px;color:var(--text2);margin-bottom:1rem;line-height:1.5">Your loans are automatically saved to a private GitHub Gist called <strong>student_loans.json</strong> every time you make a change.</p>
       <button class="btn-primary" onclick="forceSyncFromGist()" style="margin-bottom:.75rem;width:100%">↓ Pull latest from GitHub</button>
-
-      <button class="disconnect-btn" onclick="disconnectGist()" style="margin-top:.75rem">Disconnect GitHub sync</button>
+      <button class="disconnect-btn" onclick="disconnectGist()">Disconnect GitHub sync</button>
+      <div class="qr-section">
+        <div class="qr-title">📱 Add to another device</div>
+        <div class="qr-wrap">
+          <div class="qr-canvas-wrap" id="qr-canvas-wrap"></div>
+          <div class="qr-hint">Scan this QR code on your phone or another device.<br><strong>Keep it private</strong> — it contains your access token.</div>
+        </div>
       </div>
     </div>
+  </div>
+</div>
+
+
+<!-- Quick Payment Modal -->
+<div class="modal-overlay hidden" id="quick-pay-modal">
+  <div class="modal">
+    <div class="qp-header" id="qp-header">
+      <div class="qp-header-eyebrow">Did you make a payment?</div>
+      <div class="qp-header-title" id="qp-title">Make a payment</div>
+
+    </div>
+    <div class="qp-body">
+      <div class="qp-field">
+        <label class="qp-field-label">Payment amount ($)</label>
+        <div class="qp-amount-wrap">
+          <input class="qp-amount-input" id="qp-amount" type="number" placeholder="0.00" step="0.01" oninput="updateQPPreview()" style="padding-left:.85rem"/>
+        </div>
+        <div class="qp-new-balance" id="qp-balance-preview" style="display:none">
+          <span class="qp-new-balance-label">New balance</span>
+          <span class="qp-new-balance-value" id="qp-balance-val">—</span>
+        </div>
+      </div>
+      <div class="qp-divider"></div>
+      <div class="qp-field">
+        <label class="qp-field-label">Date paid</label>
+        <input id="qp-date" type="date"/>
+      </div>
+      <a class="qp-site-btn" id="qp-site-btn" href="#" target="_blank" rel="noopener" style="display:none">
+        <span class="qp-site-btn-icon">🌐</span>
+        <span id="qp-site-label">Go to payment site →</span>
+      </a>
+      <div class="qp-actions">
+        <button class="btn-secondary" onclick="closeQuickPay()">No, cancel</button>
+        <button class="qp-confirm-btn" id="qp-confirm-btn" onclick="saveQuickPayment()">Yes, log my payment</button>
+      </div>
     </div>
   </div>
 </div>
