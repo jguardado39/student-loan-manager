@@ -151,17 +151,41 @@
     .payoff-track{height:5px;background:var(--surface2);border-radius:999px;overflow:hidden}
     .payoff-fill{height:100%;border-radius:999px;background:var(--payoff-color,var(--accent));transition:width .8s cubic-bezier(.4,0,.2,1)}
     .payoff-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--text4);margin-top:6px;font-family:var(--mono);font-weight:300}
-    .chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.4rem;box-shadow:var(--shadow);overflow:hidden}
-    .chart-subtabs{display:flex;gap:3px;background:var(--tab-bg);border-radius:10px;padding:3px;margin-bottom:1.25rem}
-    .chart-subtab{flex:1;padding:.4rem .5rem;border:none;border-radius:8px;background:none;font-size:12px;font-weight:600;font-family:var(--sans);color:var(--text3);cursor:pointer;transition:all .15s}
-    .chart-subtab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
-    .chart-subpanel{display:none}.chart-subpanel.active{display:block}
-    .chart-scroll{overflow-x:auto;overflow-y:hidden;margin-top:.5rem;border-radius:8px}
-    .chart-inner{display:flex;align-items:flex-end;gap:6px;height:140px;min-width:100%;width:max-content;padding-bottom:2px}
-    .chart-bar-wrap{flex:0 0 auto;width:44px;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
-    .chart-bar{width:100%;border-radius:4px 4px 0 0;background:var(--accent-soft);min-height:2px;cursor:default;transition:background .15s}.chart-bar:hover{background:var(--accent)}
-    .chart-amount{font-size:9px;color:var(--text4);font-family:var(--mono)}.chart-label{font-size:9px;color:var(--text3);white-space:nowrap;font-family:var(--mono)}
-    .chart-empty{text-align:center;padding:2.5rem;color:var(--text4);font-size:13px}
+    /* ── Chart Section ── */
+    .chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:1.5rem 1.5rem 1.25rem;box-shadow:var(--shadow);overflow:hidden}
+    .chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;gap:12px;flex-wrap:wrap}
+    .chart-title-group{}
+    .chart-section-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text4);margin-bottom:2px;font-family:var(--mono)}
+    .chart-title-line{font-size:16px;font-weight:800;letter-spacing:-.4px;color:var(--text)}
+    .chart-subtabs{display:flex;gap:4px;background:var(--tab-bg);border-radius:999px;padding:4px}
+    .chart-subtab{display:flex;align-items:center;gap:5px;padding:.38rem .9rem;border:none;border-radius:999px;background:none;font-size:12px;font-weight:700;font-family:var(--sans);color:var(--text3);cursor:pointer;transition:all .2s;white-space:nowrap;letter-spacing:-.01em}
+    .chart-subtab .tab-icon{font-size:12px;opacity:.7;transition:opacity .2s}
+    .chart-subtab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 6px rgba(0,0,0,.10);border:1px solid var(--border)}
+    .chart-subtab.active .tab-icon{opacity:1}
+    .chart-subpanel{display:none}.chart-subpanel.active{display:block;animation:fadeUp .25s ease both}
+    /* Monthly bar chart */
+    .chart-scroll{overflow-x:auto;overflow-y:hidden;margin-top:.25rem;border-radius:8px;padding-bottom:4px}
+    .chart-scroll::-webkit-scrollbar{height:4px}.chart-scroll::-webkit-scrollbar-track{background:transparent}.chart-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+    .chart-inner{display:flex;align-items:flex-end;gap:8px;height:180px;min-width:100%;width:max-content;padding:0 4px 2px}
+    .chart-bar-wrap{flex:0 0 auto;width:48px;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end;position:relative}
+    .chart-bar-wrap:hover .chart-tooltip{opacity:1;transform:translateY(0)}
+    .chart-tooltip{position:absolute;bottom:calc(100% - 20px);left:50%;transform:translateX(-50%) translateY(-4px);background:var(--text);color:var(--bg);font-family:var(--mono);font-size:10px;font-weight:500;padding:4px 8px;border-radius:8px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s,transform .15s;z-index:10}
+    .chart-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:var(--text)}
+    .chart-bar{width:100%;border-radius:6px 6px 2px 2px;background:var(--accent-soft);min-height:4px;cursor:pointer;transition:background .15s,transform .15s;position:relative;overflow:hidden}
+    .chart-bar::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.18) 0%,transparent 60%);pointer-events:none}
+    .chart-bar:hover{background:var(--accent);transform:scaleY(1.02);transform-origin:bottom}
+    .chart-amount{font-size:9px;color:var(--text4);font-family:var(--mono);font-weight:500;opacity:0;transition:opacity .15s}
+    .chart-bar-wrap:hover .chart-amount{opacity:1}
+    .chart-label{font-size:9px;color:var(--text3);white-space:nowrap;font-family:var(--mono);font-weight:400}
+    /* Empty state */
+    .chart-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1.5rem;gap:.75rem;text-align:center}
+    .chart-empty-icon{font-size:36px;opacity:.35}
+    .chart-empty-text{font-size:13px;color:var(--text4);font-family:var(--mono);font-weight:300;line-height:1.5}
+    /* Chart stat pills */
+    .chart-stats-row{display:flex;gap:8px;margin-bottom:1.1rem;flex-wrap:wrap}
+    .chart-stat-pill{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:.4rem .85rem;display:flex;flex-direction:column;gap:2px}
+    .chart-stat-pill-label{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text4);font-weight:700;font-family:var(--mono)}
+    .chart-stat-pill-value{font-size:14px;font-weight:600;font-family:var(--mono);letter-spacing:-.4px;color:var(--text)}
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:100;animation:fadeIn .15s ease}
     .modal-overlay.hidden{display:none}
     .modal{background:var(--surface);border-radius:20px;padding:2rem;width:100%;max-width:420px;margin:1rem;box-shadow:var(--shadow-lg);border:1px solid var(--border);animation:slideUp .2s cubic-bezier(.34,1.56,.64,1)}
@@ -281,16 +305,22 @@
     <div class="analytics-section"><div class="analytics-title">Summary</div><div class="interest-grid" id="interest-grid"></div></div>
     <div class="analytics-section"><div class="analytics-title">Payoff dates</div><div class="payoff-list" id="payoff-list"></div></div>
     <div class="analytics-section">
-      <div class="analytics-title">Charts</div>
       <div class="chart-wrap">
-        <div class="chart-subtabs">
-          <button class="chart-subtab active" id="subtab-monthly" onclick="switchChart('monthly')">Monthly</button>
-          <button class="chart-subtab" id="subtab-balance" onclick="switchChart('balance')">Balance</button>
-          <button class="chart-subtab" id="subtab-projection" onclick="switchChart('projection')">Projection</button>
+        <div class="chart-header">
+          <div class="chart-title-group">
+            <div class="chart-section-label">Visualize</div>
+            <div class="chart-title-line" id="chart-title-line">Monthly payments</div>
+          </div>
+          <div class="chart-subtabs">
+            <button class="chart-subtab active" id="subtab-monthly" onclick="switchChart('monthly')"><span class="tab-icon">📊</span>Monthly</button>
+            <button class="chart-subtab" id="subtab-balance" onclick="switchChart('balance')"><span class="tab-icon">📉</span>Balance</button>
+            <button class="chart-subtab" id="subtab-projection" onclick="switchChart('projection')"><span class="tab-icon">🔮</span>Projection</button>
+          </div>
         </div>
+        <div class="chart-stats-row" id="chart-stats-row"></div>
         <div class="chart-subpanel active" id="subpanel-monthly"><div class="chart-scroll"><div class="chart-inner" id="chart-inner"></div></div></div>
-        <div class="chart-subpanel" id="subpanel-balance"><div id="balance-chart-wrap"><canvas id="balance-chart" height="220"></canvas></div></div>
-        <div class="chart-subpanel" id="subpanel-projection"><div id="projection-chart-wrap"><canvas id="projection-chart" height="220"></canvas></div></div>
+        <div class="chart-subpanel" id="subpanel-balance"><div id="balance-chart-wrap"><canvas id="balance-chart" height="240"></canvas></div></div>
+        <div class="chart-subpanel" id="subpanel-projection"><div id="projection-chart-wrap"><canvas id="projection-chart" height="240"></canvas></div></div>
       </div>
     </div>
   </div>
@@ -711,22 +741,38 @@ function renderAnalytics(){
   bills.forEach(function(b){(b.loan_history||[]).forEach(function(e){var d=new Date(e.paid_on);if(isNaN(d))return;var k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');monthly[k]=(monthly[k]||0)+(e.amount_paid||0);});});
   var ci=document.getElementById('chart-inner');ci.innerHTML='';
   var keys=Object.keys(monthly).sort();
-  if(!keys.length){ci.innerHTML='<div class="chart-empty">No payment data yet.</div>';}
-  else{var mx=Math.max.apply(null,keys.map(function(k){return monthly[k];}));
-    keys.forEach(function(k){var v=monthly[k],h=mx>0?(v/mx)*100:0,pts=k.split('-');
-      var lbl=new Date(+pts[0],+pts[1]-1).toLocaleDateString('en-US',{month:'short',year:'2-digit'});
-      var w=document.createElement('div');w.className='chart-bar-wrap';
-      w.innerHTML='<div class="chart-amount">$'+fmt(v)+'</div><div class="chart-bar" style="height:'+h+'%"></div><div class="chart-label">'+lbl+'</div>';ci.appendChild(w);});}
   var COLORS=['#2d6a4f','#1a56a0','#7c3aed','#b7770d','#c0392b','#0891b2'];
+  var COLORS_SOFT=['rgba(45,106,79,.15)','rgba(26,86,160,.15)','rgba(124,58,237,.15)','rgba(183,119,13,.15)','rgba(192,57,43,.15)','rgba(8,145,178,.15)'];
+  renderChartStats('monthly');
+  if(!keys.length){ci.innerHTML='<div class="chart-empty"><div class="chart-empty-icon">📊</div><div class="chart-empty-text">No payments yet.<br>Add a payment to see your history.</div></div>';}
+  else{
+    var mx=Math.max.apply(null,keys.map(function(k){return monthly[k];}));
+    // find tallest for visual highlight
+    var maxKey=keys.reduce(function(a,k){return monthly[k]>monthly[a]?k:a;},keys[0]);
+    keys.forEach(function(k){var v=monthly[k],h=mx>0?Math.max(4,(v/mx)*100):4,pts=k.split('-');
+      var lbl=new Date(+pts[0],+pts[1]-1).toLocaleDateString('en-US',{month:'short',year:'2-digit'});
+      var isMax=k===maxKey;
+      var w=document.createElement('div');w.className='chart-bar-wrap';
+      w.innerHTML='<div class="chart-tooltip">$'+fmt(v)+'</div>'+
+        '<div class="chart-bar" style="height:'+h+'%;'+(isMax?'background:var(--accent);':'')+'"></div>'+
+        '<div class="chart-label">'+lbl+'</div>';
+      ci.appendChild(w);
+    });
+  }
   var bw=document.getElementById('balance-chart-wrap');
   if(window._balChart){window._balChart.destroy();window._balChart=null;}bw.innerHTML='';
   var ad=new Set();bills.forEach(function(b){(b.loan_history||[]).forEach(function(e){if(e.paid_on)ad.add(e.paid_on);});});
   var sd=Array.from(ad).sort(function(a,b){return new Date(a)-new Date(b);});
-  if(sd.length<2){bw.innerHTML='<div class="chart-empty">Add at least 2 payments to see balance history.</div>';}
-  else{var bc=document.createElement('canvas');bc.height=220;bw.appendChild(bc);
-    var dark=document.body.classList.contains('dark'),gc=dark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.05)',tc=dark?'#3a3a38':'#b0b0a8';
-    window._balChart=new Chart(bc,{type:'line',data:{labels:sd,datasets:bills.map(function(b,i){return{label:b.name,data:sd.map(function(dt){var h=(b.loan_history||[]).slice().sort(function(a,c){return new Date(a.paid_on)-new Date(c.paid_on);});var en=h.filter(function(e){return new Date(e.paid_on)<=new Date(dt);}).pop();return en?en.remaining_balance:null;}),borderColor:COLORS[i%6],backgroundColor:'transparent',borderWidth:2,pointRadius:3,tension:.3,spanGaps:true};})}
-    ,options:{responsive:true,plugins:{legend:{labels:{color:tc,font:{size:11,family:'Epilogue'}}},tooltip:{callbacks:{label:function(x){return' $'+fmt(x.raw);}}}},scales:{x:{ticks:{color:tc,maxTicksLimit:8},grid:{color:gc}},y:{ticks:{color:tc,callback:function(v){return'$'+fmt(v);}},grid:{color:gc}}}}});}
+  if(sd.length<2){bw.innerHTML='<div class="chart-empty"><div class="chart-empty-icon">📉</div><div class="chart-empty-text">Add at least 2 payments<br>to see your balance over time.</div></div>';}
+  else{
+    var bc=document.createElement('canvas');bc.height=240;bw.appendChild(bc);
+    var dark=document.body.classList.contains('dark'),gc=dark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.04)',tc=dark?'#525250':'#b0b0a8';
+    var makeGradient=function(ctx,color,alpha){try{var g=ctx.createLinearGradient(0,0,0,240);g.addColorStop(0,color.replace(')',','+alpha+')').replace('rgb','rgba'));g.addColorStop(1,'rgba(0,0,0,0)');return g;}catch(e){return 'transparent';}};
+    window._balChart=new Chart(bc,{type:'line',data:{labels:sd,datasets:bills.map(function(b,i){
+      var col=COLORS[i%6];
+      return{label:b.name,data:sd.map(function(dt){var h=(b.loan_history||[]).slice().sort(function(a,c){return new Date(a.paid_on)-new Date(c.paid_on);});var en=h.filter(function(e){return new Date(e.paid_on)<=new Date(dt);}).pop();return en?en.remaining_balance:null;}),
+        borderColor:col,backgroundColor:COLORS_SOFT[i%6],fill:true,borderWidth:2.5,pointRadius:4,pointHoverRadius:6,pointBackgroundColor:col,tension:.4,spanGaps:true};
+    })},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:tc,font:{size:11,family:'Epilogue',weight:'600'},padding:16,usePointStyle:true,pointStyleWidth:8}},tooltip:{backgroundColor:dark?'#1e1e1c':'#fff',titleColor:dark?'#f0efe8':'#111',bodyColor:dark?'#b0b0a8':'#3a3a38',borderColor:dark?'rgba(255,255,255,.1)':'rgba(0,0,0,.08)',borderWidth:1,padding:12,callbacks:{label:function(x){return ' '+x.dataset.label+': $'+fmt(x.raw);}}}},scales:{x:{ticks:{color:tc,maxTicksLimit:8,font:{size:10,family:'Martian Mono'}},grid:{color:gc},border:{display:false}},y:{ticks:{color:tc,callback:function(v){return'$'+fmt(v);},font:{size:10,family:'Martian Mono'}},grid:{color:gc},border:{display:false}}}}});}
   var pw2=document.getElementById('projection-chart-wrap');
   if(window._projChart){window._projChart.destroy();window._projChart=null;}pw2.innerHTML='';
   var pds=[],hasp=false;
@@ -740,17 +786,40 @@ function renderAnalytics(){
     var prj=[],d=new Date(),i2=0;
     while(bal>0&&i2<360){d=new Date(d);d.setMonth(d.getMonth()+1);bal=Math.max(0,bal-avg);prj.push({x:d.toLocaleDateString('en-US',{month:'short',year:'numeric'}),y:bal});i2++;if(!bal)break;}
     var col=COLORS[i%6];
-    pds.push({label:b.name+' (actual)',data:hp,borderColor:col,backgroundColor:'transparent',borderWidth:2,pointRadius:2,tension:.3});
-    pds.push({label:b.name+' (projected)',data:prj,borderColor:col,backgroundColor:'transparent',borderWidth:2,borderDash:[5,5],pointRadius:0,tension:.3});
+    pds.push({label:b.name+' (actual)',data:hp,borderColor:col,backgroundColor:COLORS_SOFT[i%6],fill:true,borderWidth:2.5,pointRadius:3,pointHoverRadius:5,pointBackgroundColor:col,tension:.4});
+    pds.push({label:b.name+' (projected)',data:prj,borderColor:col,backgroundColor:'transparent',borderWidth:2,borderDash:[6,4],pointRadius:0,tension:.4});
   });
-  if(!hasp){pw2.innerHTML='<div class="chart-empty">Add at least 2 payments with principal to see projection.</div>';}
-  else{var pc=document.createElement('canvas');pc.height=220;pw2.appendChild(pc);
-    var dk2=document.body.classList.contains('dark'),gc2=dk2?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.05)',tc2=dk2?'#3a3a38':'#b0b0a8';
-    window._projChart=new Chart(pc,{type:'line',data:{datasets:pds},options:{responsive:true,parsing:false,plugins:{legend:{labels:{color:tc2,font:{size:11}}},tooltip:{callbacks:{label:function(x){return' $'+fmt(x.raw.y);}}}},scales:{x:{type:'category',ticks:{color:tc2,maxTicksLimit:8},grid:{color:gc2}},y:{ticks:{color:tc2,callback:function(v){return'$'+fmt(v);}},grid:{color:gc2}}}}});}
+  if(!hasp){pw2.innerHTML='<div class="chart-empty"><div class="chart-empty-icon">🔮</div><div class="chart-empty-text">Add at least 2 payments with principal<br>to see your payoff projection.</div></div>';}
+  else{
+    var pc=document.createElement('canvas');pc.height=240;pw2.appendChild(pc);
+    var dk2=document.body.classList.contains('dark'),gc2=dk2?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.04)',tc2=dk2?'#525250':'#b0b0a8';
+    window._projChart=new Chart(pc,{type:'line',data:{datasets:pds},options:{responsive:true,parsing:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:tc2,font:{size:11,family:'Epilogue',weight:'600'},padding:16,usePointStyle:true,pointStyleWidth:8,filter:function(item){return !item.text.includes('projected');}}},tooltip:{backgroundColor:dk2?'#1e1e1c':'#fff',titleColor:dk2?'#f0efe8':'#111',bodyColor:dk2?'#b0b0a8':'#3a3a38',borderColor:dk2?'rgba(255,255,255,.1)':'rgba(0,0,0,.08)',borderWidth:1,padding:12,callbacks:{label:function(x){return ' '+x.dataset.label+': $'+fmt(x.raw.y);}}}},scales:{x:{type:'category',ticks:{color:tc2,maxTicksLimit:8,font:{size:10,family:'Martian Mono'}},grid:{color:gc2},border:{display:false}},y:{ticks:{color:tc2,callback:function(v){return'$'+fmt(v);},font:{size:10,family:'Martian Mono'}},grid:{color:gc2},border:{display:false}}}}});
+  }
 }
 
 function switchTab(t){['loans','analytics'].forEach(function(x){document.getElementById('tab-btn-'+x).classList.toggle('active',x===t);document.getElementById('tab-'+x).classList.toggle('active',x===t);});if(t==='analytics')loadChartJs(renderAnalytics);}
-function switchChart(c){['monthly','balance','projection'].forEach(function(x){document.getElementById('subtab-'+x).classList.toggle('active',x===c);document.getElementById('subpanel-'+x).classList.toggle('active',x===c);});}
+var _chartTitles={monthly:'Monthly payments',balance:'Balance history',projection:'Payoff projection'};
+function switchChart(c){['monthly','balance','projection'].forEach(function(x){document.getElementById('subtab-'+x).classList.toggle('active',x===c);document.getElementById('subpanel-'+x).classList.toggle('active',x===c);});var tl=document.getElementById('chart-title-line');if(tl)tl.textContent=_chartTitles[c]||'';renderChartStats(c);}
+function renderChartStats(c){
+  var row=document.getElementById('chart-stats-row');if(!row)return;row.innerHTML='';
+  if(c==='monthly'){
+    var monthly={};bills.forEach(function(b){(b.loan_history||[]).forEach(function(e){var d=new Date(e.paid_on);if(isNaN(d))return;var k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');monthly[k]=(monthly[k]||0)+(e.amount_paid||0);});});
+    var vals=Object.values(monthly);if(!vals.length)return;
+    var total=vals.reduce(function(a,b){return a+b;},0),avg=total/vals.length,mx=Math.max.apply(null,vals);
+    var pills=[['Total paid','$'+fmt(total)],['Avg / month','$'+fmt(Math.round(avg))],['Best month','$'+fmt(mx)]];
+    pills.forEach(function(p){var el=document.createElement('div');el.className='chart-stat-pill';el.innerHTML='<div class="chart-stat-pill-label">'+p[0]+'</div><div class="chart-stat-pill-value">'+p[1]+'</div>';row.appendChild(el);});
+  } else if(c==='balance'){
+    var tb=bills.reduce(function(s,b){return s+(b.remaining_balance||0);},0);
+    var ts=bills.reduce(function(s,b){return s+(b.starting_balance||0);},0);
+    var pct=ts>0?Math.round((1-tb/ts)*100):0;
+    var pills=[['Started','$'+fmt(ts)],['Remaining','$'+fmt(tb)],['% paid off',pct+'%']];
+    pills.forEach(function(p){var el=document.createElement('div');el.className='chart-stat-pill';el.innerHTML='<div class="chart-stat-pill-label">'+p[0]+'</div><div class="chart-stat-pill-value">'+p[1]+'</div>';row.appendChild(el);});
+  } else if(c==='projection'){
+    var earliest=null;bills.forEach(function(b){var e=estimatePayoff(b);if(e&&(!earliest||e<earliest))earliest=e;});
+    var pills=[['Loans tracked',bills.filter(function(b){return!b.archived;}).length],['Est. payoff',earliest?earliest.toLocaleDateString('en-US',{month:'short',year:'numeric'}):'—']];
+    pills.forEach(function(p){var el=document.createElement('div');el.className='chart-stat-pill';el.innerHTML='<div class="chart-stat-pill-label">'+p[0]+'</div><div class="chart-stat-pill-value">'+p[1]+'</div>';row.appendChild(el);});
+  }
+}
 function toggleMenu(id,e){e.stopPropagation();var m=document.getElementById('menu-'+id),open=m.style.display!=='none';closeAllMenus();if(!open){m.style.display='block';m.previousElementSibling.classList.add('active');}}
 function closeMenu(id){var m=document.getElementById('menu-'+id);if(m){m.style.display='none';if(m.previousElementSibling)m.previousElementSibling.classList.remove('active');}}
 function closeAllMenus(){document.querySelectorAll('.menu-dropdown').forEach(function(m){m.style.display='none';});document.querySelectorAll('.menu-trigger').forEach(function(t){t.classList.remove('active');});}
