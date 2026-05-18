@@ -245,3 +245,9 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45
 .qp-site-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:.6rem 1rem;border:1.5px solid var(--border);border-radius:11px;font-size:13px;font-weight:600;font-family:var(--sans);cursor:pointer;background:none;color:var(--text2);text-decoration:none;transition:all .15s;margin-bottom:10px}
 .qp-site-btn:hover{background:var(--surface2);border-color:var(--text3)}
 .qp-site-btn-icon{font-size:14px}
+
+/* ── Analytics loan picker ───────────────────────────────────────────────── */
+.analytics-loan-picker{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1.75rem;animation:fadeUp .3s ease both}
+.loan-picker-btn{padding:.45rem 1rem;border-radius:999px;border:1.5px solid var(--border);background:none;font-size:13px;font-weight:600;font-family:var(--sans);color:var(--text3);cursor:pointer;transition:all .18s;white-space:nowrap}
+.loan-picker-btn:hover{border-color:var(--picker-color,var(--accent));color:var(--picker-color,var(--accent));background:transparent}
+.loan-picker-btn.active{background:var(--picker-color,var(--accent));border-color:var(--picker-color,var(--accent));color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.15)}

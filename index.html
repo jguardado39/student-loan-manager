@@ -75,16 +75,19 @@
   <!-- ══════════════════════════════════════════════════════════════════ -->
   <div class="tab-panel" id="tab-analytics">
 
+    <!-- Loan picker -->
+    <div id="analytics-loan-picker" class="analytics-loan-picker"></div>
+
     <!-- Summary cards -->
     <div class="analytics-section">
       <div class="analytics-title">Summary</div>
       <div class="interest-grid" id="interest-grid"></div>
     </div>
 
-    <!-- Payoff dates -->
+    <!-- Payoff date (single loan) -->
     <div class="analytics-section">
-      <div class="analytics-title">Payoff dates</div>
-      <div class="payoff-list" id="payoff-list"></div>
+      <div class="analytics-title">Payoff date</div>
+      <div id="payoff-card-wrap"></div>
     </div>
 
     <!-- Charts -->
@@ -106,10 +109,10 @@
           <div class="chart-scroll"><div class="chart-inner" id="chart-inner"></div></div>
         </div>
         <div class="chart-subpanel" id="subpanel-balance">
-          <div id="balance-chart-wrap"><canvas id="balance-chart" height="240"></canvas></div>
+          <div id="balance-chart-wrap"></div>
         </div>
         <div class="chart-subpanel" id="subpanel-projection">
-          <div id="projection-chart-wrap"><canvas id="projection-chart" height="240"></canvas></div>
+          <div id="projection-chart-wrap"></div>
         </div>
       </div>
     </div>
