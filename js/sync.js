@@ -81,7 +81,7 @@ async function gistLoad() {
     var data = await res2.json();
     if (data.files && data.files[GIST_FILE]) {
       var parsed = JSON.parse(data.files[GIST_FILE].content);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         bills = parsed;
         localStorage.setItem('slm-bills', JSON.stringify(bills));
         render();

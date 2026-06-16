@@ -49,7 +49,7 @@ function buildLoanBlock(bill, isArch, colorIndex, isDark, container) {
   var due   = new Date(bill.due_date + 'T00:00:00');
   var dl    = Math.round((due - today) / 86400000);
   var st    = getStatus(dl);
-  var icon  = ICONS[bill.name] || ICONS['Other'];
+  var icon  = ICONS[bill.loan_type] || ICONS['Other'];
   var dl2   = due.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   var rem   = bill.remaining_balance !== undefined ? bill.remaining_balance : bill.amount;
   var start = bill.starting_balance  || bill.remaining_balance || bill.amount;

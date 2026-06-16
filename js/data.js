@@ -7,14 +7,14 @@ var LC = ['#2d6a4f','#1a56a0','#7c3aed','#b7770d','#c0392b','#0891b2'];
 var LS = ['#d8ede4','#e8f0fb','#ede9fe','#fef9e7','#fdecea','#e0f2fe'];
 var LD = ['#152a20','#182030','#1e1230','#2a2010','#2a1a18','#0c2030'];
 
-// Emoji icons keyed by loan name keywords
+// Emoji icons keyed by loan type
 var ICONS = {
-  'Federal Direct Loan': '🎓',
-  'Perkins Loan': '🎓',
-  'PLUS Loan': '🎓',
-  'Private Loan': '🏦',
+  'Federal': '🎓',
   'Subsidized': '🎓',
   'Unsubsidized': '🎓',
+  'PLUS': '🎓',
+  'Perkins': '🎓',
+  'Private': '🏦',
   'Other': '💳'
 };
 
