@@ -43,20 +43,20 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 .tab-btn{flex:1;padding:.55rem 1rem;border:none;border-radius:9px;background:none;font-size:13px;font-weight:600;font-family:var(--sans);color:var(--text3);cursor:pointer;transition:all .18s}
 .tab-btn.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
 .tab-panel{display:none}.tab-panel.active{display:block;animation:fadeUp .3s ease both}
-.loans-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));align-items:start;gap:14px;margin-bottom:1.25rem}
+.loans-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));align-items:start;gap:14px;margin-bottom:1.25rem}
 .loan-block{border-radius:16px;border:1px solid var(--border);background:var(--surface);box-shadow:var(--shadow);transition:box-shadow .2s,transform .2s;animation:fadeUp .35s ease both;position:relative;isolation:isolate}
 .loan-block:hover{box-shadow:var(--shadow-lg);transform:translateY(-1px)}
 .loan-block:nth-child(1){animation-delay:.05s}.loan-block:nth-child(2){animation-delay:.12s}.loan-block:nth-child(3){animation-delay:.19s}.loan-block:nth-child(4){animation-delay:.26s}
 .loan-block::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--loan-color,var(--accent));border-radius:4px 0 0 4px;transition:width .2s}
 .loan-block:hover::before{width:5px}
 .loan-block.archived{opacity:.55}.loan-block.archived:hover{opacity:1}
-.bill-card{padding:1.25rem 1.25rem 1rem 1.5rem;display:flex;align-items:flex-start;gap:14px;cursor:pointer;transition:background .15s}
+.bill-card{padding:1.25rem 1.25rem 1rem 1.5rem;display:flex;align-items:flex-start;gap:16px;cursor:pointer;transition:background .15s}
 .bill-card:hover{background:rgba(0,0,0,.015)}
 body.dark .bill-card:hover{background:rgba(255,255,255,.015)}
 .bill-icon{width:42px;height:42px;border-radius:11px;background:var(--loan-color-soft,var(--accent-soft));display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;margin-top:2px}
 .bill-info{flex:1;min-width:0}
-.bill-name{font-size:15px;font-weight:700;display:flex;align-items:center;gap:7px;flex-wrap:wrap;letter-spacing:-.2px}
-.bill-meta{font-size:11px;color:var(--text3);margin-top:4px;font-family:var(--mono);font-weight:300}
+.bill-name{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap;letter-spacing:-.2px;line-height:1.35}
+.bill-meta{font-size:12px;color:var(--text3);margin-top:6px;font-family:var(--mono);font-weight:300;line-height:1.5}
 .loan-balance-block{text-align:right;flex-shrink:0}
 .loan-balance-remaining{font-family:var(--mono);font-size:20px;font-weight:500;letter-spacing:-.8px;line-height:1}
 .loan-balance-label{font-size:10px;color:var(--text4);text-transform:uppercase;letter-spacing:.07em;margin-top:3px;font-family:var(--mono)}
