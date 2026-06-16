@@ -1,0 +1,18 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		}
+	],
+	"settings": {},
+	"launch": {
+		"configurations": [
+			{
+				"type": "firefox",
+				request": "launch",
+				"name": "Launch localhost",
+				"url": "http://localhost:3000"
+			}
+		]
+	}
+}
