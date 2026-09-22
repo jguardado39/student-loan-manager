@@ -35,6 +35,10 @@
       </button>
       <button class="dark-toggle" onclick="exportCSV()"
         style="font-size:13px;font-family:var(--sans);font-weight:600;padding:8px 14px;">⬇ Export</button>
+      <button class="dark-toggle" onclick="openImport()"
+        style="font-size:13px;font-family:var(--sans);font-weight:600;padding:8px 14px;">⬆ Import</button>
+      <input type="file" id="import-file" accept=".csv,.json,text/csv,application/json"
+        style="display:none" onchange="handleImportFile(event)" />
       <button class="dark-toggle" onclick="toggleDark()" id="dark-toggle-btn">🌙</button>
     </div>
   </div>
@@ -339,6 +343,7 @@
 <script src="js/modals.js"></script>
 <script src="js/analytics.js"></script>
 <script src="js/sync.js"></script>
+<script src="js/import.js"></script>
 <script src="js/main.js"></script>
 
 </body>
