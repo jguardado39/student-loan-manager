@@ -142,13 +142,13 @@ function exportCSV() {
   var today = new Date().toLocaleDateString('en-US');
   var rows = [
     ['Loan Name','Type','Interest Rate (%)','Monthly Payment',
-     'Starting Balance','Remaining Balance','Payments Made','Date Exported']
+     'Starting Balance','Remaining Balance','Payments Made','Due Date','Date Exported']
   ];
   bills.forEach(function(b) {
     rows.push([
       b.name, b.loan_type || '', b.interest_rate != null ? b.interest_rate : '',
       b.amount, b.starting_balance || '', b.remaining_balance || '',
-      (b.loan_history || []).length, today
+      (b.loan_history || []).length, b.due_date || '', today
     ]);
   });
   rows.push([]);
